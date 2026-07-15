@@ -724,7 +724,7 @@ function render(d) {
 }
 
 // ── Fetch data ────────────────────────────────────────────────────────────────
-fetch('data/garmin.json')
+fetch('data/garmin.json?v=' + Date.now())
   .then(r => {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
