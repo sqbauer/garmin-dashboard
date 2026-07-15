@@ -10,7 +10,9 @@ from pathlib import Path
 
 from garminconnect import Garmin
 
+from datetime import datetime
 TODAY = date.today().isoformat()
+NOW = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 YESTERDAY = (date.today() - timedelta(days=1)).isoformat()
 WEEK_AGO = (date.today() - timedelta(days=7)).isoformat()
 MONTH_AGO = (date.today() - timedelta(days=30)).isoformat()
@@ -40,7 +42,7 @@ def main():
     client.login()
     print("Logged in.")
 
-    out = {"updated": TODAY, "today": TODAY}
+    out = {"updated": NOW, "today": TODAY}
 
     # ── Profile ──────────────────────────────────────────────────────────────
     print("Profile…")
