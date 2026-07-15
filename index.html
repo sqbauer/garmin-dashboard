@@ -363,13 +363,76 @@ canvas.sparkline { width: 100%; height: 48px; display: block; }
       <div class="site-title">Garmin Dashboard</div>
       <div class="sync-time" id="sync-time">Loading…</div>
     </div>
-    <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">☀︎</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="theme-btn" id="refresh-btn" aria-label="Refresh data" title="Trigger data refresh">↻</button>
+      <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">☀︎</button>
+    </div>
   </header>
+
+  <div id="refresh-modal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:16px">
+      <div style="font-size:14px;font-weight:700">Trigger data refresh</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6">Paste a GitHub Personal Access Token with <code style="background:var(--surface-2);padding:1px 5px;border-radius:4px">workflow</code> scope. It's stored only in this browser and never sent anywhere except GitHub's API.</div>
+      <input id="token-input" type="password" placeholder="ghp_…" style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;padding:10px 12px;outline:none;width:100%">
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="theme-btn" id="modal-cancel">Cancel</button>
+        <button id="modal-go" style="background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;cursor:pointer;font-size:13px;font-weight:600;padding:7px 16px">Refresh now</button>
+      </div>
+      <div id="modal-status" style="font-size:12px;color:var(--muted);min-height:16px"></div>
+    </div>
+  </div>
 
   <div id="root"><div class="state-msg">Loading data…</div></div>
 </div>
 
 <script>
+// ── Refresh button ────────────────────────────────────────────────────────────
+const modal = document.getElementById('refresh-modal');
+const tokenInput = document.getElementById('token-input');
+const modalStatus = document.getElementById('modal-status');
+
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  const saved = localStorage.getItem('gh_token');
+  if (saved) tokenInput.value = saved;
+  modal.style.display = 'flex';
+  tokenInput.focus();
+});
+
+document.getElementById('modal-cancel').addEventListener('click', () => {
+  modal.style.display = 'none';
+  modalStatus.textContent = '';
+});
+
+modal.addEventListener('click', e => {
+  if (e.target === modal) { modal.style.display = 'none'; modalStatus.textContent = ''; }
+});
+
+document.getElementById('modal-go').addEventListener('click', async () => {
+  const token = tokenInput.value.trim();
+  if (!token) { modalStatus.textContent = 'Please enter a token.'; return; }
+  localStorage.setItem('gh_token', token);
+  modalStatus.textContent = 'Triggering workflow…';
+  try {
+    const res = await fetch('https://api.github.com/repos/sqbauer/garmin-dashboard/actions/workflows/fetch_garmin.yml/dispatches', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' },
+      body: JSON.stringify({ ref: 'main' }),
+    });
+    if (res.status === 204) {
+      modalStatus.style.color = 'var(--good)';
+      modalStatus.textContent = '✓ Workflow triggered — check back in ~1 minute.';
+      setTimeout(() => { modal.style.display = 'none'; modalStatus.textContent = ''; modalStatus.style.color = 'var(--muted)'; }, 3000);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      modalStatus.style.color = 'var(--bad)';
+      modalStatus.textContent = `Error ${res.status}: ${err.message || 'check your token'}`;
+    }
+  } catch (e) {
+    modalStatus.style.color = 'var(--bad)';
+    modalStatus.textContent = 'Network error — try again.';
+  }
+});
+
 // ── Theme toggle ─────────────────────────────────────────────────────────────
 const html = document.documentElement;
 const themeBtn = document.getElementById('theme-btn');
