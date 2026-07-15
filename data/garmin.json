@@ -1,15 +1,15 @@
 {
-  "updated": "2026-07-15",
+  "updated": "2026-07-15 18:48 UTC",
   "today": "2026-07-15",
   "name": "Staf Bauer",
   "daily": {
     "steps": 2456,
     "step_goal": 11000,
-    "calories_total": 2118.0,
+    "calories_total": 2164.0,
     "calories_active": 204.0,
     "distance_m": 2067,
     "floors": null,
-    "stress_avg": 26,
+    "stress_avg": 27,
     "body_battery_high": 60,
     "body_battery_low": 29,
     "intensity_moderate": 0,
