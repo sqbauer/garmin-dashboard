@@ -3,13 +3,13 @@
   "today": "2026-07-15",
   "name": "Staf Bauer",
   "daily": {
-    "steps": 14,
+    "steps": 2456,
     "step_goal": 11000,
-    "calories_total": 827.0,
-    "calories_active": 0.0,
-    "distance_m": 12,
+    "calories_total": 2109.0,
+    "calories_active": 204.0,
+    "distance_m": 2067,
     "floors": null,
-    "stress_avg": 22,
+    "stress_avg": 26,
     "body_battery_high": 60,
     "body_battery_low": 29,
     "intensity_moderate": 0,
@@ -32,7 +32,7 @@
   },
   "heart_rate": {
     "resting": 55,
-    "max": 96,
+    "max": 124,
     "min": 54
   },
   "recent_activities": [
@@ -240,7 +240,7 @@
     },
     {
       "date": "2026-07-15",
-      "steps": 14,
+      "steps": 2456,
       "goal": 11000
     }
   ],
