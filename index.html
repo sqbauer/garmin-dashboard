@@ -7,15 +7,17 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <style>
-/* ── Tokens ──────────────────────────────────────────────────────────────── */
-:root {
+/* ── Tokens ─────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
   --bg:#0c0e17;--surface:#13161f;--surface-2:#1c2033;--border:#252840;
   --text:#dde0f2;--muted:#5c6080;
   --accent:#7b6ef6;--accent-dim:rgba(123,110,246,.12);
   --good:#3fd68f;--warn:#f0a832;--bad:#f06060;--blue:#60a5fa;
   --good-dim:rgba(63,214,143,.12);--warn-dim:rgba(240,168,50,.12);--bad-dim:rgba(240,96,96,.12);
-  --radius:12px;--radius-sm:8px;--gap:14px;
 }
 :root[data-theme="light"] {
   --bg:#f0f1f8;--surface:#fff;--surface-2:#e8eaf5;--border:#d4d7ec;
@@ -24,183 +26,167 @@
   --good:#1db870;--warn:#d48a10;--bad:#d64040;--blue:#3b82f6;
   --good-dim:rgba(29,184,112,.10);--warn-dim:rgba(212,138,16,.10);--bad-dim:rgba(214,64,64,.10);
 }
-:root[data-theme="dark"] {
-  --bg:#0c0e17;--surface:#13161f;--surface-2:#1c2033;--border:#252840;
-  --text:#dde0f2;--muted:#5c6080;
-  --accent:#7b6ef6;--accent-dim:rgba(123,110,246,.12);
-  --good:#3fd68f;--warn:#f0a832;--bad:#f06060;--blue:#60a5fa;
-  --good-dim:rgba(63,214,143,.12);--warn-dim:rgba(240,168,50,.12);--bad-dim:rgba(240,96,96,.12);
-}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;line-height:1.5;min-height:100dvh;-webkit-font-smoothing:antialiased;padding-bottom:68px}
 
-/* ── Shell ───────────────────────────────────────────────────────────────── */
-.shell{max-width:680px;margin:0 auto;padding:0 16px 16px}
+.shell{max-width:700px;margin:0 auto;padding:0 14px 20px}
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
-.site-header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:12px}
-.header-left{display:flex;flex-direction:column;gap:1px}
+/* ── Header ──────────────────────────────────────────────────────── */
+.site-header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:11px 0;gap:12px}
 .site-title{font-size:15px;font-weight:700;letter-spacing:-.01em}
-.sync-time{font-size:10px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
-.icon-btn{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--muted);cursor:pointer;font-size:14px;padding:6px 10px;line-height:1;transition:color .15s,border-color .15s;flex-shrink:0}
+.sync-time{font-size:10px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
+.icon-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:13px;padding:5px 9px;line-height:1;transition:color .15s,border-color .15s;flex-shrink:0}
 .icon-btn:hover{color:var(--text);border-color:var(--muted)}
 
-/* ── Bottom tab nav ──────────────────────────────────────────────────────── */
+/* ── Tab nav ─────────────────────────────────────────────────────── */
 .tab-nav{position:fixed;bottom:0;left:0;right:0;z-index:20;background:var(--surface);border-top:1px solid var(--border);display:flex;height:56px}
 .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;transition:color .15s;padding:6px 0}
 .tab-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tab-btn.active{color:var(--accent)}
+.tab-panel{display:none}.tab-panel.active{display:block}
 
-/* ── Tab panels ──────────────────────────────────────────────────────────── */
-.tab-panel{display:none}
-.tab-panel.active{display:block}
-
-/* ── Grid ────────────────────────────────────────────────────────────────── */
-.grid{display:grid;grid-template-columns:1fr;gap:var(--gap);margin-top:var(--gap)}
+/* ── Grid ────────────────────────────────────────────────────────── */
+.grid{display:grid;grid-template-columns:1fr;gap:13px;margin-top:13px}
 @media(min-width:520px){.grid{grid-template-columns:1fr 1fr}.card--wide{grid-column:1/-1}}
 
-/* ── Cards ───────────────────────────────────────────────────────────────── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:14px}
-.card-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.card-title{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.03em;text-transform:uppercase}
+/* ── Cards ───────────────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
-/* ── Metrics ─────────────────────────────────────────────────────────────── */
-.metric-big{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
-.metric-unit{font-size:14px;font-weight:500;color:var(--muted);margin-left:3px}
-.metric-sub{font-size:12px;color:var(--muted);margin-top:4px}
-.stat-row{display:flex;flex-direction:column;gap:7px}
+/* ── Metrics ─────────────────────────────────────────────────────── */
+.metric-big{font-size:38px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.metric-unit{font-size:13px;font-weight:500;color:var(--muted);margin-left:3px}
+.metric-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.stat-row{display:flex;flex-direction:column;gap:6px}
 .stat-item{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .stat-key{font-size:12px;color:var(--muted);flex-shrink:0}
 .stat-val{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
 
-/* ── Progress bar ────────────────────────────────────────────────────────── */
+/* ── Progress ────────────────────────────────────────────────────── */
 .progress-wrap{display:flex;flex-direction:column;gap:5px}
 .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 .progress-track{height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden}
 .progress-fill{height:100%;border-radius:99px;background:var(--accent);transition:width .6s cubic-bezier(.22,1,.36,1)}
 .progress-fill.good{background:var(--good)}.progress-fill.warn{background:var(--warn)}
 
-/* ── Score chips ─────────────────────────────────────────────────────────── */
-.score-chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.score-chip.good{background:var(--good-dim);color:var(--good)}
-.score-chip.warn{background:var(--warn-dim);color:var(--warn)}
-.score-chip.bad{background:var(--bad-dim);color:var(--bad)}
-.score-chip.neutral{background:var(--accent-dim);color:var(--accent)}
+/* ── Chips ───────────────────────────────────────────────────────── */
+.chip{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.chip.good{background:var(--good-dim);color:var(--good)}
+.chip.warn{background:var(--warn-dim);color:var(--warn)}
+.chip.bad{background:var(--bad-dim);color:var(--bad)}
+.chip.neutral{background:var(--accent-dim);color:var(--accent)}
 
-/* ── Sleep stages ────────────────────────────────────────────────────────── */
-.sleep-stages{display:flex;height:8px;border-radius:99px;overflow:hidden;gap:1px}
-.stage{height:100%;border-radius:2px}
+/* ── Sleep stages ────────────────────────────────────────────────── */
+.sleep-stages{display:flex;height:7px;border-radius:99px;overflow:hidden;gap:1px}
 .stage-deep{background:#7b6ef6}.stage-rem{background:#a78cf7}.stage-light{background:#60a5fa}.stage-awake{background:var(--surface-2)}
 .stage-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
 .legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
 .legend-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
 
-/* ── Sparkline ───────────────────────────────────────────────────────────── */
-.spark-wrap{width:100%}
-canvas.sparkline{width:100%;height:48px;display:block}
-
-/* ── Activities list ─────────────────────────────────────────────────────── */
-.act-list{display:flex;flex-direction:column;gap:8px}
-.act-item{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-sm);cursor:pointer;transition:background .15s}
+/* ── Activities ──────────────────────────────────────────────────── */
+.act-list{display:flex;flex-direction:column;gap:7px}
+.act-item{display:flex;align-items:center;gap:11px;padding:10px 11px;background:var(--surface-2);border-radius:8px;cursor:pointer;transition:background .15s}
 .act-item:hover{background:var(--border)}
-.act-icon{font-size:20px;width:36px;text-align:center;flex-shrink:0}
+.act-icon{font-size:20px;width:34px;text-align:center;flex-shrink:0}
 .act-info{flex:1;min-width:0}
 .act-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .act-meta{font-size:11px;color:var(--muted);margin-top:1px}
-.act-stats{text-align:right;flex-shrink:0}
+.act-right{text-align:right;flex-shrink:0}
 .act-dist{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
 .act-hr{font-size:11px;color:var(--muted)}
 
-/* ── Activity detail panel ───────────────────────────────────────────────── */
+/* ── Activity detail panel ───────────────────────────────────────── */
 .detail-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
 .detail-overlay.open{display:block}
-.detail-panel{position:fixed;bottom:56px;left:0;right:0;z-index:101;background:var(--surface);border-top:1px solid var(--border);border-radius:16px 16px 0 0;max-height:85dvh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.detail-panel{position:fixed;bottom:56px;left:0;right:0;z-index:101;background:var(--surface);border-top:1px solid var(--border);border-radius:16px 16px 0 0;max-height:88dvh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.22,1,.36,1)}
 .detail-panel.open{transform:translateY(0)}
-@media(min-width:600px){.detail-panel{left:50%;right:auto;transform:translateX(-50%) translateY(100%);width:560px}.detail-panel.open{transform:translateX(-50%) translateY(0)}}
-.detail-header{display:flex;align-items:center;gap:12px;padding:20px 20px 12px;position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border)}
-.detail-close{margin-left:auto;background:var(--surface-2);border:none;border-radius:99px;color:var(--muted);cursor:pointer;font-size:16px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+@media(min-width:600px){.detail-panel{left:50%;right:auto;transform:translateX(-50%) translateY(100%);width:580px}.detail-panel.open{transform:translateX(-50%) translateY(0)}}
+.detail-header{display:flex;align-items:center;gap:12px;padding:18px 18px 12px;position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);z-index:1}
+.detail-close{margin-left:auto;background:var(--surface-2);border:none;border-radius:99px;color:var(--muted);cursor:pointer;font-size:15px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .detail-close:hover{color:var(--text)}
-.detail-body{padding:16px 20px 32px;display:flex;flex-direction:column;gap:16px}
-.detail-map{height:220px;border-radius:var(--radius);overflow:hidden;background:var(--surface-2)}
-.detail-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.detail-stat{background:var(--surface-2);border-radius:var(--radius-sm);padding:12px}
-.detail-stat-key{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.detail-stat-val{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
-.detail-stat-unit{font-size:12px;font-weight:500;color:var(--muted);margin-left:2px}
+.detail-body{padding:14px 18px 32px;display:flex;flex-direction:column;gap:14px}
+.detail-map{height:210px;border-radius:10px;overflow:hidden;background:var(--surface-2)}
+.detail-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.detail-stat{background:var(--surface-2);border-radius:8px;padding:10px}
+.detail-stat-key{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.detail-stat-val{font-size:20px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px;line-height:1}
+.detail-stat-unit{font-size:11px;font-weight:500;color:var(--muted);margin-left:2px}
 
-/* ── Chart cards ─────────────────────────────────────────────────────────── */
+/* ── Laps ────────────────────────────────────────────────────────── */
+.laps-section-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.laps-chart-wrap{height:130px;position:relative}
+.laps-chart-wrap canvas{width:100%!important;height:100%!important}
+.laps-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.laps-table th{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right;padding:5px 8px;border-bottom:1px solid var(--border)}
+.laps-table th:first-child{text-align:left}
+.laps-table td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--border)}
+.laps-table td:first-child{text-align:left;color:var(--muted)}
+.laps-table tr:last-child td{border-bottom:none}
+.laps-table tr:hover td{background:var(--surface-2)}
+
+/* ── Chart containers ────────────────────────────────────────────── */
 .chart-wrap{position:relative;width:100%;height:180px}
-.chart-wrap canvas{width:100%!important;height:100%!important}
-.chart-wrap-tall{position:relative;width:100%;height:220px}
-.chart-wrap-tall canvas{width:100%!important;height:100%!important}
+.chart-wrap-tall{position:relative;width:100%;height:230px}
+.chart-wrap canvas,.chart-wrap-tall canvas{width:100%!important;height:100%!important}
+.zoom-hint{font-size:10px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-top:3px}
+.reset-zoom{background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);cursor:pointer;font-size:10px;padding:1px 7px}
+.reset-zoom:hover{color:var(--text);border-color:var(--muted)}
 
-/* ── ACWR zone bands ─────────────────────────────────────────────────────── */
-.acwr-legend{display:flex;gap:12px;flex-wrap:wrap}
-.acwr-dot{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:4px}
+/* ── Insight ─────────────────────────────────────────────────────── */
+.insight{font-size:12px;line-height:1.55;color:var(--muted);padding:9px 11px;background:var(--surface-2);border-radius:8px;border-left:3px solid var(--accent)}
+.insight.good{border-color:var(--good)}.insight.warn{border-color:var(--warn)}.insight.bad{border-color:var(--bad)}
 
-/* ── Insight pill ────────────────────────────────────────────────────────── */
-.insight{font-size:12px;line-height:1.5;color:var(--muted);padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-sm);border-left:3px solid var(--accent)}
-.insight.good{border-color:var(--good)}
-.insight.warn{border-color:var(--warn)}
-.insight.bad{border-color:var(--bad)}
+/* ── Info expandable ─────────────────────────────────────────────── */
+.info-toggle{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none;font-size:11px;color:var(--muted);padding:0;border:none;background:none;width:100%;text-align:left}
+.info-toggle:hover{color:var(--text)}
+.info-arrow{transition:transform .18s;font-size:9px;display:inline-block}
+.info-toggle.open .info-arrow{transform:rotate(90deg)}
+.info-body{font-size:11px;line-height:1.65;color:var(--muted);padding:7px 0 0 14px;display:none}
+.info-body.open{display:block}
+.info-body b{color:var(--text);font-weight:600}
 
-/* ── Modals ──────────────────────────────────────────────────────────────── */
+/* ── Modals ──────────────────────────────────────────────────────── */
 .modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
-.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:16px}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:14px}
 .modal-title{font-size:14px;font-weight:700}
 .modal-desc{font-size:12px;color:var(--muted);line-height:1.6}
-.modal-input{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;padding:10px 12px;outline:none;width:100%}
+.modal-input{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:9px 11px;outline:none;width:100%}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end}
-.btn-primary{background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;cursor:pointer;font-size:13px;font-weight:600;padding:7px 16px}
+.btn-primary{background:var(--accent);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;padding:6px 14px}
 .modal-status{font-size:12px;color:var(--muted);min-height:16px}
-
 .state-msg{text-align:center;padding:80px 20px;color:var(--muted);font-size:14px}
-
-/* ── Section separator ───────────────────────────────────────────────────── */
-.section-sep{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:20px;margin-bottom:-4px;padding-top:4px;border-top:1px solid var(--border)}
+canvas.sparkline{width:100%;height:48px;display:block}
 </style>
 </head>
 <body>
 <div class="shell">
   <header class="site-header">
-    <div class="header-left">
+    <div>
       <div class="site-title">Garmin Dashboard</div>
       <div class="sync-time" id="sync-time">Loading…</div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="icon-btn" id="refresh-btn" title="Refresh data">↻</button>
+    <div style="display:flex;gap:7px">
+      <button class="icon-btn" id="refresh-btn" title="Trigger data refresh">↻</button>
       <button class="icon-btn" id="theme-btn">☀︎</button>
     </div>
   </header>
 
-  <!-- Tab panels -->
-  <div class="tab-panel active" id="tab-today">
-    <div id="root-today"><div class="state-msg">Loading…</div></div>
-  </div>
-  <div class="tab-panel" id="tab-analytics">
-    <div id="root-analytics"><div class="state-msg">Loading…</div></div>
-  </div>
-  <div class="tab-panel" id="tab-longterm">
-    <div id="root-longterm"><div class="state-msg">Loading…</div></div>
-  </div>
+  <div class="tab-panel active" id="tab-today"><div id="root-today"><div class="state-msg">Loading…</div></div></div>
+  <div class="tab-panel" id="tab-analytics"><div id="root-analytics"><div class="state-msg">Loading…</div></div></div>
+  <div class="tab-panel" id="tab-longterm"><div id="root-longterm"><div class="state-msg">Loading…</div></div></div>
 </div>
 
-<!-- Bottom nav -->
 <nav class="tab-nav">
   <button class="tab-btn active" data-tab="today">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 12h2M19 12h2M12 3v2M12 19v2M6.34 6.34l1.42 1.42M16.24 16.24l1.42 1.42M6.34 17.66l1.42-1.42M16.24 7.76l1.42-1.42"/></svg>
-    Today
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 12h2M19 12h2M12 3v2M12 19v2M6.34 6.34l1.42 1.42M16.24 16.24l1.42 1.42M6.34 17.66l1.42-1.42M16.24 7.76l1.42-1.42"/></svg>Today
   </button>
   <button class="tab-btn" data-tab="analytics">
-    <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 16 4-4 4 4 4-4"/></svg>
-    Analytics
+    <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 16 4-4 4 4 4-4"/></svg>Analytics
   </button>
   <button class="tab-btn" data-tab="longterm">
-    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    Long-term
+    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Long-term
   </button>
 </nav>
 
@@ -208,7 +194,7 @@ canvas.sparkline{width:100%;height:48px;display:block}
 <div class="modal-overlay" id="refresh-modal">
   <div class="modal-box">
     <div class="modal-title">Trigger data refresh</div>
-    <div class="modal-desc">Paste a GitHub Personal Access Token with <code style="background:var(--surface-2);padding:1px 5px;border-radius:4px">workflow</code> scope. Stored only in this browser.</div>
+    <div class="modal-desc">Paste a GitHub PAT with <code style="background:var(--surface-2);padding:1px 5px;border-radius:4px">workflow</code> scope. Stored only in this browser.</div>
     <input id="token-input" type="password" class="modal-input" placeholder="ghp_…">
     <div class="modal-actions">
       <button class="icon-btn" id="modal-cancel">Cancel</button>
@@ -222,9 +208,9 @@ canvas.sparkline{width:100%;height:48px;display:block}
 <div class="detail-overlay" id="detail-overlay"></div>
 <div class="detail-panel" id="detail-panel">
   <div class="detail-header">
-    <div id="detail-icon" style="font-size:24px"></div>
+    <div id="detail-icon" style="font-size:22px"></div>
     <div>
-      <div id="detail-name" style="font-size:15px;font-weight:700"></div>
+      <div id="detail-name" style="font-size:14px;font-weight:700"></div>
       <div id="detail-date" style="font-size:11px;color:var(--muted)"></div>
     </div>
     <button class="detail-close" id="detail-close">✕</button>
@@ -232,265 +218,279 @@ canvas.sparkline{width:100%;height:48px;display:block}
   <div class="detail-body">
     <div class="detail-map" id="detail-map" style="display:none"></div>
     <div class="detail-stats-grid" id="detail-stats"></div>
+    <div id="detail-laps"></div>
   </div>
 </div>
 
 <script>
-// ── CSS var helper ────────────────────────────────────────────────────────────
-const cssVar = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+// ── CSS var ────────────────────────────────────────────────────────
+const cv = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
+// ── Theme ──────────────────────────────────────────────────────────
 const html = document.documentElement;
 const themeBtn = document.getElementById('theme-btn');
-const saved = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
-html.setAttribute('data-theme', saved);
-themeBtn.textContent = saved === 'dark' ? '☀︎' : '☾';
+const savedTheme = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+html.setAttribute('data-theme', savedTheme);
+themeBtn.textContent = savedTheme === 'dark' ? '☀︎' : '☾';
 themeBtn.addEventListener('click', () => {
   const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  html.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
+  html.setAttribute('data-theme', next); localStorage.setItem('theme', next);
   themeBtn.textContent = next === 'dark' ? '☀︎' : '☾';
 });
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
-let activeTab = 'today';
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + tab).classList.add('active');
-    activeTab = tab;
-  });
-});
+// ── Tabs ───────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+}));
 
-// ── Refresh modal ─────────────────────────────────────────────────────────────
+// ── Refresh modal ──────────────────────────────────────────────────
 const modal = document.getElementById('refresh-modal');
 const tokenInput = document.getElementById('token-input');
 const modalStatus = document.getElementById('modal-status');
 document.getElementById('refresh-btn').addEventListener('click', () => {
-  const t = localStorage.getItem('gh_token');
-  if (t) tokenInput.value = t;
-  modal.classList.add('open');
-  tokenInput.focus();
+  const t = localStorage.getItem('gh_token'); if (t) tokenInput.value = t;
+  modal.classList.add('open'); tokenInput.focus();
 });
 document.getElementById('modal-cancel').addEventListener('click', () => modal.classList.remove('open'));
 modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
 document.getElementById('modal-go').addEventListener('click', async () => {
   const token = tokenInput.value.trim();
-  if (!token) { modalStatus.textContent = 'Please enter a token.'; return; }
+  if (!token) { modalStatus.textContent = 'Enter a token.'; return; }
   localStorage.setItem('gh_token', token);
-  modalStatus.textContent = 'Triggering workflow…';
-  modalStatus.style.color = 'var(--muted)';
+  modalStatus.textContent = 'Triggering…'; modalStatus.style.color = 'var(--muted)';
   try {
     const res = await fetch('https://api.github.com/repos/sqbauer/garmin-dashboard/actions/workflows/fetch_garmin.yml/dispatches', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-      body: JSON.stringify({ ref: 'main' }),
+      method:'POST', headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'},
+      body: JSON.stringify({ref:'main'}),
     });
     if (res.status === 204) {
-      modalStatus.style.color = 'var(--good)';
-      modalStatus.textContent = '✓ Triggered — data updates in ~3 minutes.';
-      setTimeout(() => modal.classList.remove('open'), 3000);
+      modalStatus.style.color='var(--good)'; modalStatus.textContent='✓ Triggered — updates in ~5 min.';
+      setTimeout(()=>modal.classList.remove('open'),3000);
     } else {
-      const err = await res.json().catch(() => ({}));
-      modalStatus.style.color = 'var(--bad)';
-      modalStatus.textContent = `Error ${res.status}: ${err.message || 'check token'}`;
+      const err=await res.json().catch(()=>({}));
+      modalStatus.style.color='var(--bad)'; modalStatus.textContent=`Error ${res.status}: ${err.message||'check token'}`;
     }
-  } catch { modalStatus.style.color = 'var(--bad)'; modalStatus.textContent = 'Network error.'; }
+  } catch { modalStatus.style.color='var(--bad)'; modalStatus.textContent='Network error.'; }
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const el = (tag, cls, inner) => {
-  const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (inner !== undefined) e.innerHTML = inner;
-  return e;
-};
-const fmt = (v, d=0) => v == null ? '—' : Number(v).toLocaleString('en', {maximumFractionDigits: d});
-const scoreClass = v => v == null ? 'neutral' : v >= 80 ? 'good' : v >= 50 ? 'warn' : 'bad';
-const actIcon = t => ({running:'🏃',cycling:'🚴',swimming:'🏊',walking:'🚶',hiking:'🥾',strength_training:'🏋️',yoga:'🧘',indoor_cycling:'🚴',treadmill_running:'🏃',open_water_swimming:'🏊'}[t] || '⚡');
+// ── Helpers ────────────────────────────────────────────────────────
+const el = (tag,cls,inner)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(inner!==undefined)e.innerHTML=inner;return e;};
+const fmt = (v,d=0)=>v==null?'—':Number(v).toLocaleString('en',{maximumFractionDigits:d});
+const scoreClass = v=>v==null?'neutral':v>=80?'good':v>=50?'warn':'bad';
+const RUN_TYPES = new Set(['running','treadmill_running','track_running','trail_running']);
+const actIcon = t=>({running:'🏃',cycling:'🚴',swimming:'🏊',walking:'🚶',hiking:'🥾',strength_training:'🏋️',yoga:'🧘',indoor_cycling:'🚴',treadmill_running:'🏃',track_running:'🏃',trail_running:'🏃',open_water_swimming:'🏊'}[t]||'⚡');
 
-function durStr(s) {
-  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sc = Math.floor(s%60);
-  return h > 0 ? `${h}h ${m.toString().padStart(2,'0')}m` : `${m}m ${sc.toString().padStart(2,'0')}s`;
-}
-function paceStr(speed_ms) {
-  if (!speed_ms) return null;
-  const spk = 1000 / speed_ms, mm = Math.floor(spk/60), ss = Math.floor(spk%60);
-  return `${mm}:${ss.toString().padStart(2,'0')}/km`;
-}
+function paceStr(speed_ms){if(!speed_ms)return null;const s=1000/speed_ms,mm=Math.floor(s/60),ss=Math.floor(s%60);return`${mm}:${ss.toString().padStart(2,'0')}`;}
+function paceNum(speed_ms){return speed_ms?(1000/speed_ms/60):null;}
+function durStr(s){if(!s)return'—';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=Math.floor(s%60);return h>0?`${h}h ${m.toString().padStart(2,'0')}m`:`${m}:${sc.toString().padStart(2,'0')}`;}
+function weekKey(dateStr){const d=new Date(dateStr);d.setHours(0,0,0,0);d.setDate(d.getDate()+3-(d.getDay()+6)%7);const w1=new Date(d.getFullYear(),0,4);return`${d.getFullYear()}-W${(1+Math.round(((d-w1)/86400000-3+(w1.getDay()+6)%7)/7)).toString().padStart(2,'0')}`;}
+function rolling(arr,w){return arr.map((v,i)=>{const sl=arr.slice(Math.max(0,i-w+1),i+1).filter(x=>x!=null);return sl.length?sl.reduce((a,b)=>a+b,0)/sl.length:null;});}
 
-// ISO week key for grouping
-function weekKey(dateStr) {
-  const d = new Date(dateStr);
-  d.setHours(0,0,0,0);
-  d.setDate(d.getDate() + 3 - (d.getDay()+6)%7);
-  const week1 = new Date(d.getFullYear(),0,4);
-  const wn = 1 + Math.round(((d-week1)/86400000-3+(week1.getDay()+6)%7)/7);
-  return `${d.getFullYear()}-W${wn.toString().padStart(2,'0')}`;
-}
-
-// Rolling average
-function rolling(arr, window) {
-  return arr.map((v,i) => {
-    const slice = arr.slice(Math.max(0,i-window+1), i+1).filter(x=>x!=null);
-    return slice.length ? slice.reduce((a,b)=>a+b,0)/slice.length : null;
-  });
-}
-
-// ── Chart defaults ────────────────────────────────────────────────────────────
-function chartDefaults() {
-  const gridColor = cssVar('--border');
-  const textColor = cssVar('--muted');
-  return {
-    plugins: { legend: { display: false }, tooltip: {
-      backgroundColor: cssVar('--surface-2'),
-      borderColor: cssVar('--border'),
-      borderWidth: 1,
-      titleColor: cssVar('--text'),
-      bodyColor: cssVar('--muted'),
-      padding: 10,
-    }},
-    scales: {
-      x: { grid: { color: gridColor }, ticks: { color: textColor, maxRotation: 0, maxTicksLimit: 6 } },
-      y: { grid: { color: gridColor }, ticks: { color: textColor } },
+// ── Chart defaults ─────────────────────────────────────────────────
+function chartDefaults(zoomable=false){
+  const base={
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:cv('--surface'),borderColor:cv('--border'),borderWidth:1,titleColor:cv('--text'),bodyColor:cv('--muted'),padding:10,cornerRadius:8,displayColors:true,boxWidth:8,boxHeight:8,boxPadding:4},
     },
-    animation: { duration: 400 },
-    responsive: true,
-    maintainAspectRatio: false,
+    scales:{
+      x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),maxRotation:0,maxTicksLimit:7}},
+      y:{grid:{color:cv('--border')},ticks:{color:cv('--muted')}},
+    },
+    animation:{duration:350},
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
   };
+  if(zoomable) base.plugins.zoom={zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'},pan:{enabled:true,mode:'x'}};
+  return base;
+}
+function lineDs(label,data,color,opts={}){
+  return{label,data,borderColor:color,backgroundColor:color+'20',borderWidth:2,pointRadius:0,pointHoverRadius:5,tension:0.3,fill:opts.fill??false,...opts};
 }
 
-function lineDataset(label, data, color, opts={}) {
-  return {
-    label, data,
-    borderColor: color,
-    backgroundColor: color + '20',
-    borderWidth: 2,
-    pointRadius: 0,
-    pointHoverRadius: 4,
-    tension: 0.3,
-    fill: opts.fill ?? false,
-    ...opts,
-  };
+// ── Sparkline ──────────────────────────────────────────────────────
+function drawSparkline(canvas,values,color){
+  const dpr=devicePixelRatio||1;canvas.width=canvas.offsetWidth*dpr;canvas.height=canvas.offsetHeight*dpr;
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);const w=canvas.offsetWidth,h=canvas.offsetHeight;
+  const valid=values.filter(v=>v!=null);if(!valid.length)return;
+  const min=Math.min(...valid)*.92,max=Math.max(...valid)*1.05,range=max-min||1;
+  const pts=values.map((v,i)=>({x:(i/(values.length-1))*w,y:h-(((v??min)-min)/range)*(h-8)-4}));
+  ctx.beginPath();ctx.moveTo(pts[0].x,h);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(pts[pts.length-1].x,h);ctx.closePath();
+  const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,color+'50');g.addColorStop(1,color+'00');ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.lineJoin='round';ctx.stroke();
+  const last=pts[pts.length-1];ctx.beginPath();ctx.arc(last.x,last.y,3,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
 }
 
-// ── Sparkline (canvas) ────────────────────────────────────────────────────────
-function drawSparkline(canvas, values, color) {
-  const dpr = devicePixelRatio || 1;
-  canvas.width = canvas.offsetWidth * dpr;
-  canvas.height = canvas.offsetHeight * dpr;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  const valid = values.filter(v => v != null);
-  if (!valid.length) return;
-  const min = Math.min(...valid) * 0.92, max = Math.max(...valid) * 1.05, range = max - min || 1;
-  const pts = values.map((v,i) => ({x:(i/(values.length-1))*w, y:h-(((v??min)-min)/range)*(h-8)-4}));
-  ctx.beginPath(); ctx.moveTo(pts[0].x, h);
-  pts.forEach(p => ctx.lineTo(p.x, p.y));
-  ctx.lineTo(pts[pts.length-1].x, h); ctx.closePath();
-  const g = ctx.createLinearGradient(0,0,0,h);
-  g.addColorStop(0, color+'50'); g.addColorStop(1, color+'00');
-  ctx.fillStyle = g; ctx.fill();
-  ctx.beginPath(); pts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
-  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke();
-  const last = pts[pts.length-1];
-  ctx.beginPath(); ctx.arc(last.x, last.y, 3, 0, Math.PI*2);
-  ctx.fillStyle = color; ctx.fill();
+// ── Info toggle ────────────────────────────────────────────────────
+function makeInfo(summary,bodyHtml){
+  const wrap=el('div');
+  const btn=el('button','info-toggle',`<span class="info-arrow">▶</span> ${summary}`);
+  const body=el('div','info-body',bodyHtml);
+  btn.addEventListener('click',()=>{btn.classList.toggle('open');body.classList.toggle('open');});
+  wrap.appendChild(btn);wrap.appendChild(body);return wrap;
 }
 
-// ── Activity detail panel ─────────────────────────────────────────────────────
-let leafletMap = null;
-function openDetail(a) {
-  document.getElementById('detail-icon').textContent = actIcon(a.type);
-  document.getElementById('detail-name').textContent = a.name || a.type || 'Activity';
-  document.getElementById('detail-date').textContent = (a.start_time || a.date || '').replace('T',' ').slice(0,16);
+// ── Zoom row ───────────────────────────────────────────────────────
+function zoomRow(ref){
+  const row=el('div','zoom-hint','<span>Scroll/pinch to zoom · drag to pan</span>');
+  const btn=el('button','reset-zoom','Reset zoom');
+  btn.addEventListener('click',()=>ref.chart&&ref.chart.resetZoom());
+  row.appendChild(btn);return row;
+}
 
-  const stats = document.getElementById('detail-stats');
-  const isRun = ['running','treadmill_running'].includes(a.type);
-  const pace = a.avg_speed ? paceStr(a.avg_speed) : null;
-  const distKm = a.distance_m ? (a.distance_m/1000).toFixed(2) : null;
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTIVITY DETAIL
+// ─────────────────────────────────────────────────────────────────────────────
+let leafletMap=null;
 
-  const tile = (key, val, unit) => val == null ? '' :
+function openDetail(a){
+  document.getElementById('detail-icon').textContent=actIcon(a.type);
+  document.getElementById('detail-name').textContent=a.name||a.type||'Activity';
+  document.getElementById('detail-date').textContent=(a.start_time||a.date||'').replace('T',' ').slice(0,16);
+
+  const isRun=RUN_TYPES.has(a.type);
+  const distKm=a.distance_m?(a.distance_m/1000).toFixed(2):null;
+  const pace=a.avg_speed?paceStr(a.avg_speed):null;
+
+  const tile=(key,val,unit)=>val==null?'':
     `<div class="detail-stat"><div class="detail-stat-key">${key}</div>
      <div class="detail-stat-val">${val}<span class="detail-stat-unit">${unit||''}</span></div></div>`;
 
-  stats.innerHTML = [
-    tile('Duration', durStr(a.duration_s||0), ''),
-    distKm ? tile('Distance', distKm, 'km') : '',
-    isRun && pace ? tile('Avg Pace', pace, '') : '',
-    tile('Avg HR', a.avg_hr, 'bpm'),
-    tile('Max HR', a.max_hr, 'bpm'),
-    tile('Calories', a.calories ? Math.round(a.calories) : null, 'kcal'),
-    a.elevation_gain != null ? tile('Elev Gain', Math.round(a.elevation_gain), 'm') : '',
-    a.avg_cadence ? tile('Cadence', Math.round(a.avg_cadence), 'spm') : '',
-    a.aerobic_effect ? tile('Aerobic TE', Number(a.aerobic_effect).toFixed(1), '') : '',
-    a.training_load ? tile('Training Load', Math.round(a.training_load), '') : '',
-    a.vo2max ? tile('VO₂ max', Number(a.vo2max).toFixed(1), 'ml/kg') : '',
+  document.getElementById('detail-stats').innerHTML=[
+    tile('Duration',durStr(a.duration_s||0),''),
+    distKm?tile('Distance',distKm,'km'):'',
+    isRun&&pace?tile('Avg Pace',pace,'/km'):'',
+    tile('Avg HR',a.avg_hr,'bpm'),
+    tile('Max HR',a.max_hr,'bpm'),
+    tile('Calories',a.calories?Math.round(a.calories):null,'kcal'),
+    a.elevation_gain!=null?tile('Elev Gain',Math.round(a.elevation_gain),'m'):'',
+    a.avg_cadence?tile('Cadence',Math.round(a.avg_cadence),'spm'):'',
+    a.aerobic_effect?tile('Aerobic TE',Number(a.aerobic_effect).toFixed(1),''):'',
+    a.anaerobic_effect?tile('Anaerobic TE',Number(a.anaerobic_effect).toFixed(1),''):'',
+    a.training_load?tile('Training Load',Math.round(a.training_load),''):'',
+    a.vo2max?tile('VO₂ max',Number(a.vo2max).toFixed(1),'ml/kg'):'',
   ].join('');
 
-  const mapDiv = document.getElementById('detail-map');
-  if (a.gps && a.gps.length > 1) {
-    mapDiv.style.display = 'block';
-    if (leafletMap) { leafletMap.remove(); leafletMap = null; }
-    mapDiv.innerHTML = '';
-    setTimeout(() => {
-      leafletMap = L.map('detail-map', { zoomControl: true, attributionControl: false });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(leafletMap);
-      const latlngs = a.gps.map(p => [p.lat, p.lon]);
-      const line = L.polyline(latlngs, { color: cssVar('--accent'), weight: 3, opacity: .9 }).addTo(leafletMap);
-      L.circleMarker(latlngs[0], { radius: 6, color: '#3fd68f', fillColor: '#3fd68f', fillOpacity: 1 }).addTo(leafletMap);
-      L.circleMarker(latlngs[latlngs.length-1], { radius: 6, color: '#f06060', fillColor: '#f06060', fillOpacity: 1 }).addTo(leafletMap);
-      leafletMap.fitBounds(line.getBounds(), { padding: [16,16] });
-    }, 50);
-  } else {
-    mapDiv.style.display = 'none';
-    if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  // Laps
+  const lapsDiv=document.getElementById('detail-laps');
+  lapsDiv.innerHTML='';
+  if(a.laps&&a.laps.length>1&&isRun){
+    const maxHR=Math.max(...a.laps.filter(l=>l.avg_hr).map(l=>l.avg_hr));
+    const minHR=Math.min(...a.laps.filter(l=>l.avg_hr).map(l=>l.avg_hr));
+    const wrap=el('div');
+    wrap.appendChild(el('div','laps-section-title',`Lap Splits — ${a.laps.length} laps`));
+
+    const chartWrap=el('div','laps-chart-wrap');
+    chartWrap.style.marginTop='10px';
+    const cvs=document.createElement('canvas');
+    chartWrap.appendChild(cvs);
+    wrap.appendChild(chartWrap);
+
+    const table=el('table','laps-table');
+    table.innerHTML=`<thead><tr><th>Lap</th><th>km</th><th>Pace</th><th>Avg HR</th><th>Max HR</th><th>Elev↑</th></tr></thead>`;
+    const tbody=document.createElement('tbody');
+    const lapLabels=[],lapPaces=[],lapHRs=[];
+
+    a.laps.forEach(lap=>{
+      const lapDist=lap.distance_m?(lap.distance_m/1000).toFixed(2):'—';
+      const lapPace=lap.avg_speed?paceStr(lap.avg_speed):'—';
+      const paceN=lap.avg_speed?paceNum(lap.avg_speed):null;
+      const hrPct=(lap.avg_hr&&maxHR>minHR)?((lap.avg_hr-minHR)/(maxHR-minHR)):0.5;
+      const hrColor=`hsl(${Math.round((1-hrPct)*120)},70%,50%)`;
+      lapLabels.push(`${lap.lap}`);lapPaces.push(paceN);lapHRs.push(lap.avg_hr||null);
+      const tr=el('tr');
+      tr.innerHTML=`<td>Lap ${lap.lap}</td>
+        <td>${lapDist}</td>
+        <td><b>${lapPace}${lapPace!=='—'?'<small style="color:var(--muted)">/km</small>':''}</b></td>
+        <td><span style="color:${hrColor};font-weight:600">${lap.avg_hr||'—'}</span> <small style="color:var(--muted)">bpm</small></td>
+        <td>${lap.max_hr||'—'} <small style="color:var(--muted)">bpm</small></td>
+        <td>${lap.elevation_gain!=null?Math.round(lap.elevation_gain)+'m':'—'}</td>`;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    lapsDiv.appendChild(wrap);
+
+    setTimeout(()=>{
+      new Chart(cvs,{
+        type:'bar',
+        data:{labels:lapLabels,datasets:[
+          {label:'Pace (min/km)',data:lapPaces,backgroundColor:cv('--accent')+'70',borderColor:cv('--accent'),borderWidth:1,yAxisID:'y'},
+          {label:'Avg HR',data:lapHRs,type:'line',borderColor:cv('--bad'),backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:cv('--bad'),yAxisID:'y2',tension:0.2},
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,animation:{duration:250},
+          interaction:{mode:'index',intersect:false},
+          plugins:{
+            legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}},
+            tooltip:{backgroundColor:cv('--surface'),borderColor:cv('--border'),borderWidth:1,titleColor:cv('--text'),bodyColor:cv('--muted'),padding:8,cornerRadius:6,
+              callbacks:{title:ctx=>`Lap ${lapLabels[ctx[0].dataIndex]}`,
+                label:ctx=>ctx.datasetIndex===0?` Pace: ${paceStr(1000/ctx.raw/60)}/km`:(ctx.raw!=null?` HR: ${ctx.raw} bpm`:'')}}
+          },
+          scales:{
+            x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),font:{size:9}}},
+            y:{grid:{color:cv('--border')},ticks:{color:cv('--accent'),font:{size:9},callback:v=>paceStr(1000/v/60)},reverse:true,title:{display:true,text:'Pace',color:cv('--accent'),font:{size:9}}},
+            y2:{position:'right',grid:{display:false},ticks:{color:cv('--bad'),font:{size:9}},title:{display:true,text:'HR (bpm)',color:cv('--bad'),font:{size:9}}},
+          }}
+      });
+    },60);
   }
+
+  // Map
+  const mapDiv=document.getElementById('detail-map');
+  if(a.gps&&a.gps.length>1){
+    mapDiv.style.display='block';
+    if(leafletMap){leafletMap.remove();leafletMap=null;}
+    mapDiv.innerHTML='';
+    setTimeout(()=>{
+      leafletMap=L.map('detail-map',{zoomControl:true,attributionControl:false});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(leafletMap);
+      const latlngs=a.gps.map(p=>[p.lat,p.lon]);
+      const line=L.polyline(latlngs,{color:cv('--accent'),weight:3}).addTo(leafletMap);
+      L.circleMarker(latlngs[0],{radius:6,color:'#3fd68f',fillColor:'#3fd68f',fillOpacity:1}).addTo(leafletMap);
+      L.circleMarker(latlngs[latlngs.length-1],{radius:6,color:'#f06060',fillColor:'#f06060',fillOpacity:1}).addTo(leafletMap);
+      leafletMap.fitBounds(line.getBounds(),{padding:[14,14]});
+    },55);
+  }else{
+    mapDiv.style.display='none';
+    if(leafletMap){leafletMap.remove();leafletMap=null;}
+  }
+
   document.getElementById('detail-overlay').classList.add('open');
   document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('detail-panel').scrollTop=0;
 }
-function closeDetail() {
-  document.getElementById('detail-overlay').classList.remove('open');
-  document.getElementById('detail-panel').classList.remove('open');
-}
-document.getElementById('detail-close').addEventListener('click', closeDetail);
-document.getElementById('detail-overlay').addEventListener('click', closeDetail);
+function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');document.getElementById('detail-panel').classList.remove('open');}
+document.getElementById('detail-close').addEventListener('click',closeDetail);
+document.getElementById('detail-overlay').addEventListener('click',closeDetail);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RENDER TODAY
+// TODAY
 // ─────────────────────────────────────────────────────────────────────────────
-function renderToday(d) {
-  const root = document.getElementById('root-today');
-  root.innerHTML = '';
-  const grid = el('div','grid');
-  root.appendChild(grid);
-  const add = c => grid.appendChild(c);
+function renderToday(d){
+  const root=document.getElementById('root-today');root.innerHTML='';
+  const grid=el('div','grid');root.appendChild(grid);const add=c=>grid.appendChild(c);
 
-  // Steps
-  if (d.daily) {
-    const {steps,step_goal,calories_active,distance_m,floors} = d.daily;
-    const pct = step_goal ? Math.min(steps/step_goal,1) : 0;
-    const distKm = distance_m ? (distance_m/1000).toFixed(1) : null;
-    const fc = pct>=1?'good':pct>=.7?'warn':'';
-    const c = el('div','card');
-    c.innerHTML = `<div class="card-label">Today</div>
+  if(d.daily){
+    const{steps,step_goal,calories_active,distance_m,floors}=d.daily;
+    const pct=step_goal?Math.min(steps/step_goal,1):0;const distKm=distance_m?(distance_m/1000).toFixed(1):null;
+    const fc=pct>=1?'good':pct>=.7?'warn':'';
+    const c=el('div','card');
+    c.innerHTML=`<div class="card-label">Today</div>
       <div><div class="metric-big">${fmt(steps)}<span class="metric-unit">steps</span></div>
       <div class="metric-sub">${distKm?distKm+' km':''}${distKm&&floors?' · ':''}${floors?floors+' floors':''}</div></div>
       <div class="progress-wrap"><div class="progress-label"><span>Goal</span><span>${fmt(step_goal)}</span></div>
       <div class="progress-track"><div class="progress-fill ${fc}" style="width:${(pct*100).toFixed(1)}%"></div></div></div>
-      <div class="stat-row"><div class="stat-item"><span class="stat-key">Active cal</span><span class="stat-val">${fmt(calories_active)} kcal</span></div></div>`;
+      <div class="stat-row"><div class="stat-item"><span class="stat-key">Active calories</span><span class="stat-val">${fmt(calories_active)} kcal</span></div></div>`;
     add(c);
   }
 
-  // Body battery & stress
-  if (d.daily) {
-    const {body_battery_high,body_battery_low,stress_avg,intensity_moderate,intensity_vigorous} = d.daily;
-    const c = el('div','card');
-    c.innerHTML = `<div class="card-label">Energy & Stress</div>
+  if(d.daily){
+    const{body_battery_high,body_battery_low,stress_avg,intensity_moderate,intensity_vigorous}=d.daily;
+    const c=el('div','card');
+    c.innerHTML=`<div class="card-label">Energy & Stress</div>
       <div><div class="metric-big">${fmt(body_battery_high)}<span class="metric-unit">/ 100</span></div>
       <div class="metric-sub">Body battery peak · low ${fmt(body_battery_low)}</div></div>
       <div class="stat-row">
@@ -501,366 +501,417 @@ function renderToday(d) {
     add(c);
   }
 
-  // Sleep
-  if (d.sleep) {
-    const s = d.sleep;
-    const hm = str => { if(!str) return 0; const m=str.match(/(\d+)h\s*(\d+)m/); return m?parseInt(m[1])*3600+parseInt(m[2])*60:0; };
+  if(d.sleep){
+    const s=d.sleep;
+    const hm=str=>{if(!str)return 0;const m=str.match(/(\d+)h\s*(\d+)m/);return m?parseInt(m[1])*3600+parseInt(m[2])*60:0;};
     const ts=hm(s.total),ds=hm(s.deep),ls=hm(s.light),rs=hm(s.rem),as=hm(s.awake);
     const pD=ts?ds/ts:0,pR=ts?rs/ts:0,pL=ts?ls/ts:0,pA=ts?as/ts:0;
     const sc=scoreClass(s.score);
-    const c = el('div','card');
+    const c=el('div','card');
     c.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div class="card-label">Sleep · ${s.date||''}</div>
-      ${s.score!=null?`<div class="score-chip ${sc}">${s.score}</div>`:''}
+      <div class="card-label">Sleep · ${s.date||''}</div>${s.score!=null?`<div class="chip ${sc}">${s.score}</div>`:''}
     </div>
     <div><div class="metric-big">${s.total||'—'}</div>
-    <div class="metric-sub">${s.avg_spo2?'SpO₂ '+fmt(s.avg_spo2,0)+'% · ':''}${s.avg_respiration?fmt(s.avg_respiration,1)+' brpm':''}</div></div>
-    <div>
-      <div class="sleep-stages">
-        <div class="stage stage-deep" style="flex:${pD}"></div>
-        <div class="stage stage-rem" style="flex:${pR}"></div>
-        <div class="stage stage-light" style="flex:${pL}"></div>
-        <div class="stage stage-awake" style="flex:${Math.max(pA,.01)}"></div>
-      </div>
-      <div class="stage-legend">
-        <span class="legend-item"><span class="legend-dot" style="background:#7b6ef6"></span>Deep ${s.deep||'—'}</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#a78cf7"></span>REM ${s.rem||'—'}</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Light ${s.light||'—'}</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--surface-2)"></span>Awake ${s.awake||'—'}</span>
-      </div>
-    </div>`;
+    <div class="metric-sub">${s.avg_spo2?'SpO₂ '+fmt(s.avg_spo2,0)+'%':''}${s.avg_spo2&&s.avg_respiration?' · ':''}${s.avg_respiration?fmt(s.avg_respiration,1)+' brpm':''}</div></div>
+    <div><div class="sleep-stages">
+      <div class="stage stage-deep" style="flex:${pD}"></div><div class="stage stage-rem" style="flex:${pR}"></div>
+      <div class="stage stage-light" style="flex:${pL}"></div><div class="stage stage-awake" style="flex:${Math.max(pA,.01)}"></div>
+    </div>
+    <div class="stage-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#7b6ef6"></span>Deep ${s.deep||'—'}</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#a78cf7"></span>REM ${s.rem||'—'}</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Light ${s.light||'—'}</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--surface-2)"></span>Awake ${s.awake||'—'}</span>
+    </div></div>`;
     add(c);
   }
 
-  // HR & HRV
   {
-    const hrv=d.hrv||d.sleep||{}, hr=d.heart_rate||{};
-    const hrvVal=hrv.last_night||hrv.hrv_last_night;
-    const hrvAvg=hrv.weekly_avg||hrv.hrv_5day;
-    const status=(hrv.status||hrv.hrv_status||'').toLowerCase();
+    const hrv=d.hrv||{},hr=d.heart_rate||{};
+    const hrvVal=hrv.last_night||d.sleep?.hrv_last_night;
+    const hrvAvg=hrv.weekly_avg||d.sleep?.hrv_5day;
+    const status=(hrv.status||d.sleep?.hrv_status||'').toLowerCase();
     const chipC=status.includes('balanced')||status.includes('good')?'good':status.includes('low')||status.includes('unbal')?'warn':'neutral';
-    if (hrvVal||hr.resting) {
+    if(hrvVal||hr.resting){
       const c=el('div','card');
       c.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div class="card-label">Heart Rate & HRV</div>
-        ${status?`<div class="score-chip ${chipC}">${status}</div>`:''}
+        <div class="card-label">Heart Rate & HRV</div>${status?`<div class="chip ${chipC}">${status}</div>`:''}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><div class="card-title">Resting HR</div><div class="metric-big" style="font-size:28px">${fmt(hr.resting)}<span class="metric-unit">bpm</span></div></div>
-        <div><div class="card-title">HRV</div><div class="metric-big" style="font-size:28px">${fmt(hrvVal)}<span class="metric-unit">ms</span></div></div>
+        <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.08em">Resting HR</div>
+          <div class="metric-big" style="font-size:30px">${fmt(hr.resting)}<span class="metric-unit">bpm</span></div></div>
+        <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.08em">HRV</div>
+          <div class="metric-big" style="font-size:30px">${fmt(hrvVal)}<span class="metric-unit">ms</span></div></div>
       </div>
       <div class="stat-row">
         <div class="stat-item"><span class="stat-key">7-day avg HRV</span><span class="stat-val">${fmt(hrvAvg)} ms</span></div>
         <div class="stat-item"><span class="stat-key">Max HR today</span><span class="stat-val">${fmt(hr.max)} bpm</span></div>
+        ${hrv.feedback?`<div class="stat-item"><span class="stat-key">Garmin tip</span><span class="stat-val" style="font-size:11px;text-align:right">${hrv.feedback}</span></div>`:''}
       </div>`;
       add(c);
     }
   }
 
-  // Fitness
-  if (d.readiness||d.vo2max) {
-    const r=d.readiness||{}, v=d.vo2max||{};
+  if(d.readiness||d.vo2max){
+    const r=d.readiness||{},v=d.vo2max||{};
     const c=el('div','card');
     c.innerHTML=`<div class="card-label">Fitness</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        ${r.score!=null?`<div><div class="card-title">Readiness</div><div class="metric-big" style="font-size:28px">${fmt(r.score)}<span class="metric-unit">/100</span></div></div>`:''}
-        ${v.running!=null?`<div><div class="card-title">VO₂ max</div><div class="metric-big" style="font-size:28px">${fmt(v.running,1)}<span class="metric-unit">ml/kg</span></div></div>`:''}
+        ${r.score!=null?`<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.08em">Readiness</div><div class="metric-big" style="font-size:30px">${fmt(r.score)}<span class="metric-unit">/100</span></div></div>`:''}
+        ${v.running!=null?`<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.08em">VO₂ max</div><div class="metric-big" style="font-size:30px">${fmt(v.running,1)}<span class="metric-unit">ml/kg</span></div></div>`:''}
       </div>
       ${r.recovery_time_h!=null?`<div class="stat-row"><div class="stat-item"><span class="stat-key">Recovery time</span><span class="stat-val">${fmt(r.recovery_time_h)} h</span></div></div>`:''}`;
     add(c);
   }
 
-  // Step history sparkline
-  if (d.steps_history&&d.steps_history.length>1) {
+  if(d.steps_history&&d.steps_history.length>1){
     const vals=d.steps_history.slice(-30).map(e=>e.steps);
+    const avg7=Math.round(vals.slice(-7).filter(Boolean).reduce((a,b)=>a+b,0)/Math.max(vals.slice(-7).filter(Boolean).length,1));
     const c=el('div','card card--wide');
     c.innerHTML=`<div class="card-label">Steps — last 30 days</div>
-      <div class="spark-wrap"><canvas class="sparkline" id="spark-steps"></canvas></div>
+      <div style="width:100%"><canvas class="sparkline" id="spark-steps"></canvas></div>
       <div class="stat-row">
-        <div class="stat-item"><span class="stat-key">7-day avg</span><span class="stat-val">${fmt(vals.slice(-7).reduce((a,b)=>(a||0)+(b||0),0)/Math.max(vals.slice(-7).filter(Boolean).length,1))} steps</span></div>
-        <div class="stat-item"><span class="stat-key">Best day (30d)</span><span class="stat-val">${fmt(Math.max(...vals.filter(Boolean)))} steps</span></div>
+        <div class="stat-item"><span class="stat-key">7-day avg</span><span class="stat-val">${fmt(avg7)} steps</span></div>
+        <div class="stat-item"><span class="stat-key">Best (30d)</span><span class="stat-val">${fmt(Math.max(...vals.filter(Boolean)))} steps</span></div>
       </div>`;
     add(c);
-    requestAnimationFrame(()=>{ const cv=document.getElementById('spark-steps'); if(cv) drawSparkline(cv,vals,cssVar('--accent')); });
+    requestAnimationFrame(()=>{const c2=document.getElementById('spark-steps');if(c2)drawSparkline(c2,vals,cv('--accent'));});
   }
 
-  // Activities
-  if (d.recent_activities&&d.recent_activities.length) {
+  if(d.recent_activities&&d.recent_activities.length){
     const c=el('div','card card--wide');
     const list=el('div','act-list');
     c.appendChild(el('div','card-label','Recent Activities'));
     d.recent_activities.slice(0,10).forEach(a=>{
-      const dur_s=a.duration_s||0, h=Math.floor(dur_s/3600), m=Math.floor((dur_s%3600)/60);
-      const dStr=h>0?`${h}h ${m.toString().padStart(2,'0')}m`:`${m}m`;
       const dKm=a.distance_m?(a.distance_m/1000).toFixed(1)+' km':'';
       const item=el('div','act-item');
       item.innerHTML=`<div class="act-icon">${actIcon(a.type)}</div>
-        <div class="act-info"><div class="act-name">${a.name||a.type||'Activity'}</div><div class="act-meta">${a.date||''} · ${dStr}</div></div>
-        <div class="act-stats"><div class="act-dist">${dKm}</div><div class="act-hr">${a.avg_hr?a.avg_hr+' bpm':a.calories?Math.round(a.calories)+' kcal':''}</div></div>`;
+        <div class="act-info"><div class="act-name">${a.name||a.type||'Activity'}</div>
+        <div class="act-meta">${a.date||''} · ${durStr(a.duration_s||0)}${a.laps&&a.laps.length?' · '+a.laps.length+' laps':''}</div></div>
+        <div class="act-right"><div class="act-dist">${dKm}</div><div class="act-hr">${a.avg_hr?a.avg_hr+' bpm':''}</div></div>`;
       item.addEventListener('click',()=>openDetail(a));
       list.appendChild(item);
     });
-    c.appendChild(list);
-    add(c);
+    c.appendChild(list);add(c);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ANALYTICS
 // ─────────────────────────────────────────────────────────────────────────────
-function renderAnalytics(d) {
-  const root = document.getElementById('root-analytics');
-  root.innerHTML = '';
-  const grid = el('div','grid');
-  root.appendChild(grid);
-  const add = c => grid.appendChild(c);
+function renderAnalytics(d){
+  const root=document.getElementById('root-analytics');root.innerHTML='';
+  const grid=el('div','grid');root.appendChild(grid);const add=c=>grid.appendChild(c);
 
-  const allActs = d.all_activities || d.recent_activities || [];
-  const hist    = d.history || {};
-  const histHRV = hist.hrv || [];
-  const histSleep = hist.sleep || [];
-  const histHR  = hist.resting_hr || [];
+  const allActs=d.all_activities||d.recent_activities||[];
+  const hist=d.history||{};
+  const histHRV=hist.hrv||[];
+  const histSleep=hist.sleep||[];
 
-  // ── 1. ACWR ───────────────────────────────────────────────────────────────
+  // ── 1. ACWR ──────────────────────────────────────────────────────
   {
-    // Proxy load: training_load if available, else duration_h * HR_factor
-    const restHR = d.heart_rate?.resting || 55;
-    const actsByDate = {};
-    allActs.forEach(a => {
-      const load = a.training_load || (a.duration_s && a.avg_hr
-        ? (a.duration_s/3600) * Math.max(0, ((a.avg_hr - restHR) / (180 - restHR))) * 100
-        : (a.duration_s ? a.duration_s/3600 * 30 : 0));
-      if (!actsByDate[a.date]) actsByDate[a.date] = 0;
-      actsByDate[a.date] += load;
+    const restHR=d.heart_rate?.resting||55;
+    const abd={};
+    allActs.forEach(a=>{
+      const load=a.training_load||(a.duration_s&&a.avg_hr?(a.duration_s/3600)*Math.max(0,(a.avg_hr-restHR)/(180-restHR))*100:(a.duration_s?a.duration_s/3600*30:0));
+      abd[a.date]=(abd[a.date]||0)+load;
     });
-
-    const labels=[], acute=[], chronic=[], ratio=[];
-    for (let i=27; i>=0; i--) {
-      const d0 = new Date(); d0.setDate(d0.getDate()-i);
-      const ds = d0.toISOString().slice(0,10);
+    const labels=[],acute=[],chronic=[],ratio=[];
+    for(let i=27;i>=0;i--){
+      const d0=new Date();d0.setDate(d0.getDate()-i);const ds=d0.toISOString().slice(0,10);
       labels.push(ds.slice(5));
-      const acute7=[], chronic28=[];
-      for (let j=0;j<7;j++) { const dj=new Date(d0); dj.setDate(dj.getDate()-j); acute7.push(actsByDate[dj.toISOString().slice(0,10)]||0); }
-      for (let j=0;j<28;j++) { const dj=new Date(d0); dj.setDate(dj.getDate()-j); chronic28.push(actsByDate[dj.toISOString().slice(0,10)]||0); }
-      const a7=acute7.reduce((a,b)=>a+b,0);
-      const c28=chronic28.reduce((a,b)=>a+b,0)/4;
-      acute.push(Math.round(a7));
-      chronic.push(Math.round(c28));
-      ratio.push(c28>0 ? Math.round((a7/c28)*100)/100 : null);
+      const a7=[],c28=[];
+      for(let j=0;j<7;j++){const dj=new Date(d0);dj.setDate(dj.getDate()-j);a7.push(abd[dj.toISOString().slice(0,10)]||0);}
+      for(let j=0;j<28;j++){const dj=new Date(d0);dj.setDate(dj.getDate()-j);c28.push(abd[dj.toISOString().slice(0,10)]||0);}
+      const s7=a7.reduce((a,b)=>a+b,0),avg28=c28.reduce((a,b)=>a+b,0)/4;
+      acute.push(Math.round(s7));chronic.push(Math.round(avg28));
+      ratio.push(avg28>0?Math.round(s7/avg28*100)/100:null);
     }
+    const lastR=ratio.filter(Boolean).at(-1);
+    const rClass=!lastR?'neutral':lastR<0.8?'warn':lastR<=1.3?'good':lastR<=1.5?'warn':'bad';
+    const rMsg=!lastR?'Not enough data.':lastR<0.8?'Load is very low — risk of detraining.':lastR<=1.3?'Optimal zone (0.8–1.3). Body is adapting well.':lastR<=1.5?'Elevated load — monitor recovery carefully.':'High injury risk. Consider a rest day.';
 
-    const lastRatio = ratio.filter(Boolean).at(-1);
-    const acwrClass = !lastRatio?'neutral':lastRatio<0.8?'warn':lastRatio<=1.3?'good':'bad';
-    const acwrMsg = !lastRatio?'Not enough data':lastRatio<0.8?'Training load is low — risk of detraining':lastRatio<=1.3?'Optimal training zone (0.8–1.3)':lastRatio<=1.5?'Elevated load — monitor recovery carefully':'High injury risk — consider a rest day';
-
-    const c = el('div','card card--wide');
-    c.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start">
+    const ref={chart:null};
+    const c=el('div','card card--wide');
+    c.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
       <div class="card-label">Acute:Chronic Workload Ratio (ACWR)</div>
-      <div class="score-chip ${acwrClass}">${lastRatio||'—'}</div>
-    </div>
+      <div class="chip ${rClass}">${lastR||'—'}</div></div>
     <div class="chart-wrap"><canvas id="chart-acwr"></canvas></div>
-    <div class="insight ${acwrClass}">${acwrMsg}</div>
-    <div style="font-size:11px;color:var(--muted)">Acute = 7-day load · Chronic = 28-day avg · Sweet spot: 0.8–1.3</div>`;
+    <div id="acwr-zr"></div>
+    <div class="insight ${rClass}">${rMsg}</div>`;
+    c.appendChild(makeInfo('What is ACWR?',
+      `<b>Acute load</b> = total training stress over the past 7 days.<br>
+       <b>Chronic load</b> = 28-day rolling average — your fitness baseline.<br>
+       <b>Ratio 0.8–1.3 (green band)</b> = sweet spot: challenging but not overloading.<br>
+       <b>&gt;1.5 (red line)</b> = significantly elevated injury risk. <b>&lt;0.8</b> = detraining zone.<br>
+       Load is estimated from duration × HR intensity when Garmin training load is unavailable.`));
     add(c);
-
     requestAnimationFrame(()=>{
-      new Chart(document.getElementById('chart-acwr'), {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { label:'Acute load', data: acute, backgroundColor: cssVar('--accent')+'60', borderColor: cssVar('--accent'), borderWidth:1, yAxisID:'y' },
-            { label:'Chronic load', data: chronic, backgroundColor: 'transparent', borderColor: cssVar('--muted'), borderWidth:1.5, type:'line', yAxisID:'y', tension:0.3, pointRadius:0 },
-            { label:'ACWR', data: ratio, borderColor: cssVar('--good'), borderWidth:2, type:'line', yAxisID:'y2', tension:0.3, pointRadius:0, borderDash:[4,2] },
-          ]
-        },
-        options: { ...chartDefaults(), scales: {
-          x: { grid:{color:cssVar('--border')}, ticks:{color:cssVar('--muted'),maxTicksLimit:7} },
-          y: { grid:{color:cssVar('--border')}, ticks:{color:cssVar('--muted')}, title:{display:true,text:'Load',color:cssVar('--muted'),font:{size:10}} },
-          y2: { position:'right', grid:{display:false}, ticks:{color:cssVar('--good')}, min:0, max:2,
-            title:{display:true,text:'Ratio',color:cssVar('--good'),font:{size:10}} },
-        }}
+      ref.chart=new Chart(document.getElementById('chart-acwr'),{
+        type:'bar',
+        data:{labels,datasets:[
+          {label:'Acute load (7d)',data:acute,backgroundColor:cv('--accent')+'55',borderColor:cv('--accent'),borderWidth:1,yAxisID:'y'},
+          {label:'Chronic (28d avg)',data:chronic,type:'line',borderColor:cv('--muted'),borderWidth:1.5,pointRadius:0,tension:0.3,fill:false,yAxisID:'y'},
+          {label:'ACWR',data:ratio,type:'line',borderColor:cv('--good'),borderWidth:2.5,pointRadius:0,tension:0.3,fill:false,borderDash:[5,3],yAxisID:'y2'},
+        ]},
+        options:{...chartDefaults(true),
+          plugins:{...chartDefaults(true).plugins,
+            legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}},
+            annotation:{annotations:{
+              safe:{type:'box',yScaleID:'y2',yMin:0.8,yMax:1.3,backgroundColor:'rgba(63,214,143,.07)',borderColor:'rgba(63,214,143,.25)',borderWidth:1,
+                label:{display:true,content:'Safe zone',color:cv('--good'),font:{size:9},position:{x:'center',y:'start'}}},
+              danger:{type:'line',yScaleID:'y2',yMin:1.5,yMax:1.5,borderColor:cv('--bad'),borderWidth:1.5,borderDash:[4,3],
+                label:{display:true,content:'Injury risk',position:'end',color:cv('--bad'),font:{size:9},backgroundColor:'transparent'}},
+            }},
+          },
+          scales:{
+            x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),maxTicksLimit:7}},
+            y:{grid:{color:cv('--border')},ticks:{color:cv('--muted')},title:{display:true,text:'Training load',color:cv('--muted'),font:{size:10}}},
+            y2:{position:'right',grid:{display:false},ticks:{color:cv('--good')},min:0,max:2.2,title:{display:true,text:'Ratio',color:cv('--good'),font:{size:10}}},
+          }}
       });
+      document.getElementById('acwr-zr').appendChild(zoomRow(ref));
     });
   }
 
-  // ── 2. HRV vs Training Load ───────────────────────────────────────────────
-  if (histHRV.length > 7) {
-    const dates = histHRV.map(h=>h.date.slice(5));
-    const hrvVals = histHRV.map(h=>h.value);
-    const hrv7 = rolling(hrvVals, 7);
+  // ── 2. Lap Pace vs HR scatter over time ───────────────────────────
+  {
+    const laps=(d.laps_history||[]).filter(l=>l.avg_speed&&l.avg_hr&&(l.distance_m||0)>=400);
+    if(laps.length>5){
+      const dates=laps.map(l=>new Date(l.date).getTime());
+      const minT=Math.min(...dates),maxT=Math.max(...dates);
+      const pts=laps.map(l=>({
+        x:paceNum(l.avg_speed),y:l.avg_hr,date:l.date,
+        dist:l.distance_m?(l.distance_m/1000).toFixed(2):'?',
+        pace:paceStr(l.avg_speed),
+        t:(new Date(l.date).getTime()-minT)/(maxT-minT||1),
+      }));
+      const bgC=pts.map(p=>`rgba(123,110,246,${(0.12+p.t*0.78).toFixed(2)})`);
+      const bdC=pts.map(p=>`rgba(123,110,246,${(0.3+p.t*0.7).toFixed(2)})`);
 
-    // Weekly load aligned to HRV dates
-    const loadMap = {};
-    allActs.forEach(a => {
-      const wk = weekKey(a.date);
-      const load = a.training_load || (a.duration_s ? a.duration_s/3600*30 : 0);
-      if (!loadMap[wk]) loadMap[wk] = 0;
-      loadMap[wk] += load;
-    });
-    const weeklyLoad = histHRV.map(h => loadMap[weekKey(h.date)] || 0);
+      const ref={chart:null};
+      const c=el('div','card card--wide');
+      c.innerHTML=`<div class="card-label">Lap Pace vs Heart Rate — over time</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:-4px">Lighter = older laps · darker purple = recent · <b>Bottom-left = fitter</b> (faster at lower HR)</div>
+        <div class="chart-wrap-tall"><canvas id="chart-laps-scatter"></canvas></div>
+        <div id="scatter-zr"></div>`;
+      c.appendChild(makeInfo('How to read this chart',
+        `Each dot = one km/lap from your runs.<br>
+         <b>X-axis (pace)</b>: left side = faster. <b>Y-axis</b>: lower = lower heart rate for that lap.<br><br>
+         <b>What to look for:</b> as your aerobic fitness improves, dots should shift toward the <b>bottom-left corner</b> — same speed at lower HR, or faster at the same HR.<br><br>
+         Dots are colored by time: lighter purple = older, darker = more recent. Hover any dot to see date, pace, and HR.`));
+      add(c);
+      requestAnimationFrame(()=>{
+        ref.chart=new Chart(document.getElementById('chart-laps-scatter'),{
+          type:'scatter',
+          data:{datasets:[{label:'Lap',data:pts,backgroundColor:bgC,borderColor:bdC,pointRadius:5,pointHoverRadius:8,pointHoverBorderWidth:2}]},
+          options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},
+            interaction:{mode:'nearest',intersect:true},
+            plugins:{
+              legend:{display:false},
+              tooltip:{backgroundColor:cv('--surface'),borderColor:cv('--border'),borderWidth:1,titleColor:cv('--text'),bodyColor:cv('--muted'),padding:10,cornerRadius:8,
+                callbacks:{title:i=>[i[0].raw.date],label:i=>[` Pace: ${i.raw.pace}/km`,` HR: ${i.raw.y} bpm`,` Lap dist: ${i.raw.dist} km`]}},
+              zoom:{zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}},
+            },
+            scales:{
+              x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),callback:v=>`${Math.floor(v)}:${String(Math.round((v%1)*60)).padStart(2,'0')}`},
+                title:{display:true,text:'Pace (min/km)  ←faster',color:cv('--muted'),font:{size:10}}},
+              y:{grid:{color:cv('--border')},ticks:{color:cv('--muted')},
+                title:{display:true,text:'Avg HR (bpm)',color:cv('--muted'),font:{size:10}}},
+            }}
+        });
+        document.getElementById('scatter-zr').appendChild(zoomRow(ref));
+      });
+    }
+  }
 
-    const lastHRV = hrv7.filter(Boolean).at(-1);
-    const prvHRV  = hrv7.filter(Boolean).slice(-8,-1).reduce((a,b)=>a+b,0)/7;
-    const hrvTrend = lastHRV && prvHRV ? lastHRV - prvHRV : 0;
-    const msg = hrvTrend > 2 ? 'HRV trending up — good recovery' : hrvTrend < -2 ? 'HRV trending down — prioritize recovery' : 'HRV stable';
-    const msgClass = hrvTrend > 2 ? 'good' : hrvTrend < -2 ? 'warn' : 'neutral';
+  // ── 3. HRV vs Training Load ───────────────────────────────────────
+  if(histHRV.length>7){
+    const dates=histHRV.map(h=>h.date.slice(5));
+    const hrvVals=histHRV.map(h=>h.value);
+    const hrv7=rolling(hrvVals,7);
+    const loadMap={};
+    allActs.forEach(a=>{const wk=weekKey(a.date);loadMap[wk]=(loadMap[wk]||0)+(a.training_load||a.duration_s?a.duration_s/3600*30:0);});
+    const weeklyLoad=histHRV.map(h=>loadMap[weekKey(h.date)]||0);
+    const lastH=hrv7.filter(Boolean).at(-1);
+    const prevH=hrv7.filter(Boolean).slice(-8,-1).reduce((a,b)=>a+b,0)/7;
+    const delta=lastH&&prevH?lastH-prevH:0;
+    const mClass=delta>2?'good':delta<-2?'warn':'neutral';
 
-    const c = el('div','card card--wide');
+    const ref={chart:null};
+    const c=el('div','card card--wide');
     c.innerHTML=`<div class="card-label">HRV vs Training Load (90 days)</div>
       <div class="chart-wrap-tall"><canvas id="chart-hrv-load"></canvas></div>
-      <div class="insight ${msgClass}">${msg} — 7-day avg: ${lastHRV?lastHRV.toFixed(1):'—'} ms</div>`;
+      <div id="hrv-zr"></div>
+      <div class="insight ${mClass}">HRV 7-day avg: ${lastH?lastH.toFixed(1):'—'} ms (${delta>=0?'+':''}${delta.toFixed(1)} ms vs last week). ${delta>2?'Recovering well.':delta<-2?'HRV dropping — prioritize rest.':'Stable.'}</div>`;
+    c.appendChild(makeInfo('HRV & training load explained',
+      `<b>HRV (Heart Rate Variability)</b> measures beat-to-beat variation. Higher = better autonomic balance and recovery.<br><br>
+       Expect HRV to <b>drop 1–2 days post hard session</b>, then recover. Persistent drops signal accumulated fatigue, illness, or life stress.<br><br>
+       <b>Orange bars</b> = weekly training load. Healthy adaptation = HRV stays stable or rises even as load increases over weeks.`));
     add(c);
-
     requestAnimationFrame(()=>{
-      new Chart(document.getElementById('chart-hrv-load'), {
+      ref.chart=new Chart(document.getElementById('chart-hrv-load'),{
         type:'line',
-        data:{ labels:dates, datasets:[
-          lineDataset('HRV (7-day avg)', hrv7, cssVar('--accent'), {fill:true}),
-          { label:'Training load', data:weeklyLoad, borderColor:cssVar('--warn'), backgroundColor:cssVar('--warn')+'20', borderWidth:1.5, tension:0.3, pointRadius:0, yAxisID:'y2', fill:true },
+        data:{labels:dates,datasets:[
+          lineDs('HRV (raw)',hrvVals,cv('--accent')+'50',{fill:false,borderWidth:1,pointRadius:0}),
+          lineDs('HRV 7-day avg',hrv7,cv('--accent'),{fill:true,pointRadius:0}),
+          {label:'Weekly load',data:weeklyLoad,type:'bar',backgroundColor:cv('--warn')+'40',borderColor:cv('--warn'),borderWidth:1,yAxisID:'y2'},
         ]},
-        options:{...chartDefaults(), scales:{
-          x:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted'),maxTicksLimit:6}},
-          y:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--accent')},title:{display:true,text:'HRV (ms)',color:cssVar('--accent'),font:{size:10}}},
-          y2:{position:'right',grid:{display:false},ticks:{color:cssVar('--warn')},title:{display:true,text:'Load',color:cssVar('--warn'),font:{size:10}}},
-        }}
+        options:{...chartDefaults(true),
+          plugins:{...chartDefaults(true).plugins,legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}},
+            tooltip:{...chartDefaults().plugins.tooltip,callbacks:{label:ctx=>{
+              if(ctx.datasetIndex===0)return` HRV: ${ctx.raw} ms`;
+              if(ctx.datasetIndex===1)return` 7d avg: ${ctx.raw?.toFixed(1)} ms`;
+              return` Load: ${ctx.raw?.toFixed(0)}`;
+            }}}},
+          scales:{
+            x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),maxTicksLimit:6}},
+            y:{grid:{color:cv('--border')},ticks:{color:cv('--accent')},title:{display:true,text:'HRV (ms)',color:cv('--accent'),font:{size:10}}},
+            y2:{position:'right',grid:{display:false},ticks:{color:cv('--warn')},title:{display:true,text:'Load',color:cv('--warn'),font:{size:10}}},
+          }}
       });
+      document.getElementById('hrv-zr').appendChild(zoomRow(ref));
     });
   }
 
-  // ── 3. Aerobic efficiency (runs only) ─────────────────────────────────────
+  // ── 4. Aerobic efficiency ─────────────────────────────────────────
   {
-    const runs = allActs.filter(a=>['running','treadmill_running'].includes(a.type)&&a.avg_hr&&a.avg_speed&&a.distance_m>500).slice(-40);
-    if (runs.length > 3) {
-      // Efficiency index: speed (m/s) / avg_hr * 1000. Higher = more efficient.
-      const eff = runs.map(a => ({ date:a.date.slice(5), val: (a.avg_speed/a.avg_hr)*1000 }));
-      const effVals = eff.map(e=>e.val);
-      const effRoll = rolling(effVals, 5);
-      const first5 = effVals.slice(0,5).filter(Boolean);
-      const last5  = effVals.slice(-5).filter(Boolean);
-      const avgFirst = first5.reduce((a,b)=>a+b,0)/first5.length;
-      const avgLast  = last5.reduce((a,b)=>a+b,0)/last5.length;
-      const pctChange = ((avgLast-avgFirst)/avgFirst*100).toFixed(1);
-      const effClass = pctChange>3?'good':pctChange<-3?'bad':'neutral';
+    const runs=allActs.filter(a=>RUN_TYPES.has(a.type)&&a.avg_hr&&a.avg_speed&&(a.distance_m||0)>500).slice(-50);
+    if(runs.length>3){
+      const eff=runs.map(a=>({date:a.date.slice(5),val:(a.avg_speed/a.avg_hr)*1000,pace:paceStr(a.avg_speed),hr:a.avg_hr,dist:((a.distance_m||0)/1000).toFixed(1)}));
+      const ev=eff.map(e=>e.val);const er=rolling(ev,5);
+      const avgF=ev.slice(0,5).filter(Boolean).reduce((a,b)=>a+b,0)/Math.min(5,ev.filter(Boolean).length);
+      const avgL=ev.slice(-5).filter(Boolean).reduce((a,b)=>a+b,0)/Math.min(5,ev.filter(Boolean).length);
+      const pct=((avgL-avgF)/avgF*100).toFixed(1);
+      const eClass=pct>3?'good':pct<-3?'bad':'neutral';
 
-      const c = el('div','card card--wide');
+      const c=el('div','card card--wide');
       c.innerHTML=`<div class="card-label">Aerobic Efficiency — Runs</div>
         <div class="chart-wrap"><canvas id="chart-eff"></canvas></div>
-        <div class="insight ${effClass}">Efficiency ${pctChange>0?'+':''}${pctChange}% vs your first runs in this dataset. ${pctChange>3?'You\'re getting fitter!':pctChange<-3?'Efficiency dipping — check fatigue or heat.':'Relatively stable.'}</div>
-        <div style="font-size:11px;color:var(--muted)">Speed ÷ heart rate. Higher = more efficient (faster at lower HR).</div>`;
+        <div class="insight ${eClass}">Efficiency ${pct>0?'+':''}${pct}% vs first runs in dataset. ${pct>3?'Aerobic base growing!':pct<-3?'Efficiency dipping — check fatigue or heat.':'Relatively stable.'}</div>`;
+      c.appendChild(makeInfo('What is aerobic efficiency?',
+        `<b>Aerobic efficiency = speed ÷ heart rate</b> (higher = better). A fitter runner covers more ground per heartbeat.<br><br>
+         Increases over weeks/months mean your cardiovascular system is becoming more efficient at a given effort.<br><br>
+         <b>Tip:</b> this metric is sensitive to heat, hills, and fatigue — compare similar conditions for the clearest trend.`));
       add(c);
-
       requestAnimationFrame(()=>{
         new Chart(document.getElementById('chart-eff'),{
           type:'line',
           data:{labels:eff.map(e=>e.date),datasets:[
-            {label:'Efficiency',data:effVals,borderColor:cssVar('--blue')+'80',borderWidth:1,pointRadius:3,pointBackgroundColor:cssVar('--blue'),tension:0},
-            lineDataset('5-run avg',effRoll,cssVar('--blue'),{pointRadius:0}),
+            {label:'Efficiency',data:ev,borderColor:cv('--blue')+'70',borderWidth:1,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:cv('--blue'),tension:0,fill:false},
+            lineDs('5-run avg',er,cv('--blue'),{pointRadius:0}),
           ]},
-          options:chartDefaults()
+          options:{...chartDefaults(),
+            plugins:{...chartDefaults().plugins,
+              legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}},
+              tooltip:{...chartDefaults().plugins.tooltip,callbacks:{
+                label:ctx=>ctx.datasetIndex===0?[` Eff: ${ctx.raw?.toFixed(2)}`,` Pace: ${eff[ctx.dataIndex].pace}/km`,` HR: ${eff[ctx.dataIndex].hr} bpm`,` Dist: ${eff[ctx.dataIndex].dist} km`]:` 5-run avg: ${ctx.raw?.toFixed(2)}`
+              }}}
+          }
         });
       });
     }
   }
 
-  // ── 4. Sleep → Performance ────────────────────────────────────────────────
+  // ── 5. Sleep → Performance ────────────────────────────────────────
   {
-    const runs = allActs.filter(a=>['running','treadmill_running'].includes(a.type)&&a.avg_hr&&a.avg_speed&&a.distance_m>500);
-    const sleepMap = {};
-    histSleep.forEach(s => { sleepMap[s.date] = s.score; });
-
-    const pts = runs.map(a => {
-      const prevDay = new Date(a.date); prevDay.setDate(prevDay.getDate()-1);
-      const prev = prevDay.toISOString().slice(0,10);
-      const score = sleepMap[prev];
-      const eff = a.avg_speed && a.avg_hr ? (a.avg_speed/a.avg_hr)*1000 : null;
-      return score && eff ? {x: score, y: Math.round(eff*100)/100, date: a.date} : null;
+    const runs=allActs.filter(a=>RUN_TYPES.has(a.type)&&a.avg_hr&&a.avg_speed&&(a.distance_m||0)>500);
+    const sleepMap={};histSleep.forEach(s=>{sleepMap[s.date]=s.score;});
+    const pts=runs.map(a=>{
+      const prev=new Date(a.date);prev.setDate(prev.getDate()-1);
+      const sc=sleepMap[prev.toISOString().slice(0,10)];
+      const ef=a.avg_speed&&a.avg_hr?(a.avg_speed/a.avg_hr)*1000:null;
+      return sc&&ef?{x:sc,y:Math.round(ef*100)/100,date:a.date,pace:paceStr(a.avg_speed),hr:a.avg_hr}:null;
     }).filter(Boolean);
 
-    if (pts.length > 4) {
-      const c = el('div','card card--wide');
+    if(pts.length>4){
+      const c=el('div','card card--wide');
       c.innerHTML=`<div class="card-label">Sleep Score → Next-Day Run Performance</div>
-        <div class="chart-wrap"><canvas id="chart-sleep-perf"></canvas></div>
-        <div style="font-size:11px;color:var(--muted)">Each dot = one run. X = sleep score the night before. Y = aerobic efficiency.</div>`;
+        <div class="chart-wrap"><canvas id="chart-sleep-perf"></canvas></div>`;
+      c.appendChild(makeInfo('How to read this',
+        `Each dot = one run. <b>X-axis</b> = sleep score the night before. <b>Y-axis</b> = aerobic efficiency on that run.<br><br>
+         A rightward cluster (better sleep → higher efficiency) suggests sleep directly drives your performance.<br><br>
+         Garmin sleep scores: 90+ excellent, 75–89 good, 60–74 fair, &lt;60 poor. Hover dots for details.`));
       add(c);
-
       requestAnimationFrame(()=>{
         new Chart(document.getElementById('chart-sleep-perf'),{
           type:'scatter',
-          data:{datasets:[{
-            label:'Run',data:pts,
-            backgroundColor: cssVar('--accent')+'90',
-            borderColor: cssVar('--accent'),
-            pointRadius:5,
-            pointHoverRadius:7,
-          }]},
-          options:{...chartDefaults(), plugins:{...chartDefaults().plugins, tooltip:{
-            ...chartDefaults().plugins.tooltip,
-            callbacks:{label:p=>`Sleep ${p.raw.x} → Eff ${p.raw.y} (${p.raw.date})`}
-          }}, scales:{
-            x:{...chartDefaults().scales.x,title:{display:true,text:'Sleep score',color:cssVar('--muted'),font:{size:10}}},
-            y:{...chartDefaults().scales.y,title:{display:true,text:'Aerobic efficiency',color:cssVar('--muted'),font:{size:10}}},
-          }}
+          data:{datasets:[{label:'Run',data:pts,backgroundColor:cv('--accent')+'80',borderColor:cv('--accent'),pointRadius:5,pointHoverRadius:7}]},
+          options:{...chartDefaults(),interaction:{mode:'nearest',intersect:true},
+            plugins:{...chartDefaults().plugins,
+              tooltip:{...chartDefaults().plugins.tooltip,callbacks:{title:i=>[i[0].raw.date],label:i=>[` Sleep: ${i.raw.x}`,` Eff: ${i.raw.y}`,` Pace: ${i.raw.pace}/km`,` HR: ${i.raw.hr} bpm`]}}},
+            scales:{
+              x:{...chartDefaults().scales.x,min:0,max:100,title:{display:true,text:'Sleep score (night before)',color:cv('--muted'),font:{size:10}}},
+              y:{...chartDefaults().scales.y,title:{display:true,text:'Aerobic efficiency',color:cv('--muted'),font:{size:10}}},
+            }}
         });
       });
     }
   }
 
-  // ── 5. Body Battery pattern ───────────────────────────────────────────────
-  if (hist.body_battery && hist.body_battery.length > 7) {
-    const bb = hist.body_battery.slice(-30).filter(e=>e.high!=null);
-    const c = el('div','card card--wide');
+  // ── 6. Body Battery ───────────────────────────────────────────────
+  if(hist.body_battery&&hist.body_battery.filter(e=>e.high!=null).length>7){
+    const bb=hist.body_battery.filter(e=>e.high!=null).slice(-30);
+    const ref={chart:null};
+    const c=el('div','card card--wide');
     c.innerHTML=`<div class="card-label">Body Battery — 30 days</div>
       <div class="chart-wrap"><canvas id="chart-bb"></canvas></div>
-      <div style="font-size:11px;color:var(--muted)">Green = daily peak · Red = daily low. Narrow range = high stress or poor recovery.</div>`;
+      <div id="bb-zr"></div>`;
+    c.appendChild(makeInfo('What is Body Battery?',
+      `Garmin's energy estimate (0–100) combining HRV, sleep quality, and activity stress.<br><br>
+       <b>Green = daily peak</b> (after sleep). <b>Red = daily low</b> (end of day).<br>
+       A narrow daily range (peak ≈ low) signals poor recovery or chronic stress. Wide range with high peaks = excellent recovery.`));
     add(c);
-
     requestAnimationFrame(()=>{
-      new Chart(document.getElementById('chart-bb'),{
+      ref.chart=new Chart(document.getElementById('chart-bb'),{
         type:'line',
         data:{labels:bb.map(e=>e.date.slice(5)),datasets:[
-          lineDataset('Peak',bb.map(e=>e.high),cssVar('--good'),{fill:false}),
-          lineDataset('Low',bb.map(e=>e.low),cssVar('--bad'),{fill:false}),
+          lineDs('Daily peak',bb.map(e=>e.high),cv('--good'),{fill:false,pointRadius:3,pointHoverRadius:5}),
+          lineDs('Daily low',bb.map(e=>e.low),cv('--bad'),{fill:false,pointRadius:3,pointHoverRadius:5}),
         ]},
-        options:{...chartDefaults(),scales:{
-          x:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted'),maxTicksLimit:6}},
-          y:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted')},min:0,max:100},
-        }}
+        options:{...chartDefaults(true),
+          plugins:{...chartDefaults(true).plugins,legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}},
+            tooltip:{...chartDefaults().plugins.tooltip,callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}}},
+          scales:{
+            x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),maxTicksLimit:6}},
+            y:{grid:{color:cv('--border')},ticks:{color:cv('--muted')},min:0,max:100},
+          }}
       });
+      document.getElementById('bb-zr').appendChild(zoomRow(ref));
     });
   }
 
-  // ── 6. Weekly volume ──────────────────────────────────────────────────────
+  // ── 7. Weekly volume ──────────────────────────────────────────────
   {
-    const wkMap = {};
-    allActs.forEach(a => {
-      const wk = weekKey(a.date);
-      if (!wkMap[wk]) wkMap[wk] = {run:0,ride:0,other:0};
-      const km = (a.distance_m||0)/1000;
-      if (['running','treadmill_running'].includes(a.type)) wkMap[wk].run += km;
-      else if (['cycling','indoor_cycling'].includes(a.type)) wkMap[wk].ride += km;
-      else wkMap[wk].other += (a.duration_s||0)/3600;
+    const wkMap={};
+    allActs.forEach(a=>{
+      const wk=weekKey(a.date);if(!wkMap[wk])wkMap[wk]={run:0,ride:0};
+      if(RUN_TYPES.has(a.type))wkMap[wk].run+=(a.distance_m||0)/1000;
+      else if(['cycling','indoor_cycling'].includes(a.type))wkMap[wk].ride+=(a.distance_m||0)/1000;
     });
-    const weeks = Object.keys(wkMap).sort().slice(-16);
-    if (weeks.length > 3) {
-      const c = el('div','card card--wide');
+    const weeks=Object.keys(wkMap).sort().slice(-16);
+    if(weeks.length>3){
+      const c=el('div','card card--wide');
       c.innerHTML=`<div class="card-label">Weekly Volume (last 16 weeks)</div>
-        <div class="chart-wrap"><canvas id="chart-vol"></canvas></div>
-        <div style="font-size:11px;color:var(--muted)">Running & cycling in km. Other activities in hours.</div>`;
+        <div class="chart-wrap"><canvas id="chart-vol"></canvas></div>`;
+      c.appendChild(makeInfo('Reading the volume chart',
+        `Purple = running km, blue = cycling km per week (stacked).<br><br>
+         Look for an upward trend during base-building phases, and planned <b>step-back weeks</b> (lower bars) that allow adaptation.<br>
+         Sudden volume spikes without recovery weeks are a common injury trigger — ACWR catches this automatically.`));
       add(c);
-
       requestAnimationFrame(()=>{
         new Chart(document.getElementById('chart-vol'),{
           type:'bar',
           data:{labels:weeks.map(w=>w.replace('-W',' W')),datasets:[
-            {label:'Running (km)',data:weeks.map(w=>Math.round(wkMap[w].run*10)/10),backgroundColor:cssVar('--accent')+'90',stack:'s'},
-            {label:'Cycling (km)',data:weeks.map(w=>Math.round(wkMap[w].ride*10)/10),backgroundColor:cssVar('--blue')+'90',stack:'s'},
+            {label:'Running km',data:weeks.map(w=>Math.round(wkMap[w].run*10)/10),backgroundColor:cv('--accent')+'90',stack:'s'},
+            {label:'Cycling km',data:weeks.map(w=>Math.round(wkMap[w].ride*10)/10),backgroundColor:cv('--blue')+'90',stack:'s'},
           ]},
-          options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{display:true,labels:{color:cssVar('--muted'),font:{size:10}}}},
-          scales:{
-            x:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted'),maxRotation:45,maxTicksLimit:8}},
-            y:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted')},stacked:true},
-          }}
+          options:{...chartDefaults(),
+            plugins:{...chartDefaults().plugins,legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}}},
+            scales:{
+              x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),maxRotation:45,maxTicksLimit:8}},
+              y:{grid:{color:cv('--border')},ticks:{color:cv('--muted')},stacked:true,title:{display:true,text:'km',color:cv('--muted'),font:{size:10}}},
+            }}
         });
       });
     }
@@ -870,158 +921,168 @@ function renderAnalytics(d) {
 // ─────────────────────────────────────────────────────────────────────────────
 // LONG-TERM
 // ─────────────────────────────────────────────────────────────────────────────
-function renderLongterm(d) {
-  const root = document.getElementById('root-longterm');
-  root.innerHTML = '';
-  const grid = el('div','grid');
-  root.appendChild(grid);
-  const add = c => grid.appendChild(c);
+function renderLongterm(d){
+  const root=document.getElementById('root-longterm');root.innerHTML='';
+  const grid=el('div','grid');root.appendChild(grid);const add=c=>grid.appendChild(c);
 
-  const allActs = d.all_activities || d.recent_activities || [];
-  const hist = d.history || {};
+  const allActs=d.all_activities||d.recent_activities||[];
+  const hist=d.history||{};
 
-  // ── 1. VO2max trend ───────────────────────────────────────────────────────
+  // ── VO2max trend ──────────────────────────────────────────────────
   {
-    const vo2pts = allActs
-      .filter(a=>a.vo2max&&['running','treadmill_running','cycling'].includes(a.type))
-      .sort((a,b)=>a.date.localeCompare(b.date));
-    if (vo2pts.length > 3) {
-      const roll = rolling(vo2pts.map(a=>a.vo2max), 5);
-      const first = vo2pts.slice(0,5).map(a=>a.vo2max).reduce((a,b)=>a+b,0)/Math.min(5,vo2pts.length);
-      const last  = vo2pts.slice(-5).map(a=>a.vo2max).reduce((a,b)=>a+b,0)/Math.min(5,vo2pts.length);
-      const delta = last-first;
-      const cls = delta>1?'good':delta<-1?'bad':'neutral';
-      const c = el('div','card card--wide');
+    const vo2pts=allActs.filter(a=>a.vo2max&&(RUN_TYPES.has(a.type)||a.type==='cycling')).sort((a,b)=>a.date.localeCompare(b.date));
+    if(vo2pts.length>3){
+      const roll=rolling(vo2pts.map(a=>a.vo2max),5);
+      const first=vo2pts.slice(0,5).map(a=>a.vo2max).reduce((a,b)=>a+b,0)/Math.min(5,vo2pts.length);
+      const last=vo2pts.slice(-5).map(a=>a.vo2max).reduce((a,b)=>a+b,0)/Math.min(5,vo2pts.length);
+      const delta=last-first;const cls=delta>1?'good':delta<-1?'bad':'neutral';
+      const ref={chart:null};
+      const c=el('div','card card--wide');
       c.innerHTML=`<div class="card-label">VO₂ max trend</div>
         <div class="chart-wrap-tall"><canvas id="chart-vo2"></canvas></div>
-        <div class="insight ${cls}">${delta>=0?'+':''}${delta.toFixed(1)} ml/kg since first recorded. ${delta>1?'Clear fitness improvement!':delta<-1?'Declining trend — check training consistency.':'Stable aerobic capacity.'}</div>`;
+        <div id="vo2-zr"></div>
+        <div class="insight ${cls}">${delta>=0?'+':''}${delta.toFixed(1)} ml/kg/min vs first recorded. ${delta>1?'Clear aerobic improvement!':delta<-1?'Declining — review training consistency.':'Stable aerobic capacity.'}</div>`;
+      c.appendChild(makeInfo('VO₂ max explained',
+        `<b>VO₂ max</b> (ml O₂/kg/min) = the gold standard of aerobic fitness. Garmin estimates from pace + HR during outdoor runs.<br><br>
+         <b>Reference values:</b> Elite: 65–85 · Recreational: 40–55 · Sedentary: 30–40.<br><br>
+         Improves with consistent aerobic base + intervals. Responds slowly (weeks–months) — single-day fluctuations are noise.`));
       add(c);
       requestAnimationFrame(()=>{
-        new Chart(document.getElementById('chart-vo2'),{
+        ref.chart=new Chart(document.getElementById('chart-vo2'),{
           type:'line',
           data:{labels:vo2pts.map(a=>a.date.slice(5)),datasets:[
-            {label:'VO2max',data:vo2pts.map(a=>a.vo2max),borderColor:cssVar('--accent')+'60',borderWidth:1,pointRadius:3,pointBackgroundColor:cssVar('--accent'),tension:0},
-            lineDataset('5-run avg',roll,cssVar('--accent'),{pointRadius:0}),
+            {label:'VO₂ max',data:vo2pts.map(a=>a.vo2max),borderColor:cv('--accent')+'60',borderWidth:1,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:cv('--accent'),tension:0,fill:false},
+            lineDs('5-run avg',roll,cv('--accent'),{pointRadius:0}),
           ]},
-          options:{...chartDefaults(),scales:{
-            x:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted'),maxTicksLimit:8}},
-            y:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted')},title:{display:true,text:'ml/kg/min',color:cssVar('--muted'),font:{size:10}}},
-          }}
+          options:{...chartDefaults(true),
+            plugins:{...chartDefaults(true).plugins,legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}},
+              tooltip:{...chartDefaults().plugins.tooltip,callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw?.toFixed(1)} ml/kg/min`}}},
+            scales:{
+              x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),maxTicksLimit:8}},
+              y:{grid:{color:cv('--border')},ticks:{color:cv('--muted')},title:{display:true,text:'ml/kg/min',color:cv('--muted'),font:{size:10}}},
+            }}
         });
+        document.getElementById('vo2-zr').appendChild(zoomRow(ref));
       });
     }
   }
 
-  // ── 2. Resting HR trend ───────────────────────────────────────────────────
-  if (hist.resting_hr && hist.resting_hr.length > 14) {
-    const hrs = hist.resting_hr;
-    const vals = hrs.map(h=>h.value);
-    const roll = rolling(vals, 7);
-    const first7 = vals.slice(0,7).reduce((a,b)=>a+b,0)/7;
-    const last7  = vals.slice(-7).reduce((a,b)=>a+b,0)/7;
-    const delta  = last7-first7;
-    const cls = delta<-2?'good':delta>2?'bad':'neutral';
-    const c = el('div','card card--wide');
+  // ── Resting HR ────────────────────────────────────────────────────
+  if(hist.resting_hr&&hist.resting_hr.length>14){
+    const hrs=hist.resting_hr;const vals=hrs.map(h=>h.value);const roll=rolling(vals,7);
+    const avgFirst=vals.slice(0,7).reduce((a,b)=>a+b,0)/7;
+    const avgLast=vals.slice(-7).reduce((a,b)=>a+b,0)/7;
+    const delta=avgLast-avgFirst;const cls=delta<-2?'good':delta>2?'bad':'neutral';
+    const ref={chart:null};
+    const c=el('div','card card--wide');
     c.innerHTML=`<div class="card-label">Resting Heart Rate (90 days)</div>
       <div class="chart-wrap"><canvas id="chart-rhr"></canvas></div>
-      <div class="insight ${cls}">Currently avg ${last7.toFixed(0)} bpm. ${delta<-2?`Down ${Math.abs(delta).toFixed(0)} bpm — cardiovascular fitness improving!`:delta>2?`Up ${delta.toFixed(0)} bpm — monitor fatigue/illness.`:'Stable.'}</div>`;
+      <div id="rhr-zr"></div>
+      <div class="insight ${cls}">Currently avg ${avgLast.toFixed(0)} bpm. ${delta<-2?`↓ ${Math.abs(delta).toFixed(0)} bpm — cardiovascular fitness improving!`:delta>2?`↑ ${delta.toFixed(0)} bpm — check for fatigue or illness.`:'Stable.'}</div>`;
+    c.appendChild(makeInfo('Resting HR & fitness',
+      `<b>Lower resting HR = stronger, more efficient heart.</b> Endurance training typically lowers RHR over months.<br><br>
+       Elite athletes: 40–50 bpm. Recreational runners: 50–65 bpm.<br><br>
+       <b>Practical tip:</b> A spike of 5+ bpm above your personal baseline is an early warning sign of illness or overtraining — often visible before you feel unwell.`));
     add(c);
     requestAnimationFrame(()=>{
-      new Chart(document.getElementById('chart-rhr'),{
+      ref.chart=new Chart(document.getElementById('chart-rhr'),{
         type:'line',
         data:{labels:hrs.map(h=>h.date.slice(5)),datasets:[
-          {label:'Resting HR',data:vals,borderColor:cssVar('--bad')+'60',borderWidth:1,pointRadius:0,tension:0},
-          lineDataset('7-day avg',roll,cssVar('--bad'),{pointRadius:0}),
+          {label:'Resting HR',data:vals,borderColor:cv('--bad')+'60',borderWidth:1,pointRadius:0,tension:0.1,fill:false},
+          lineDs('7-day avg',roll,cv('--bad'),{pointRadius:0}),
         ]},
-        options:{...chartDefaults(),scales:{
-          x:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted'),maxTicksLimit:6}},
-          y:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted')},title:{display:true,text:'bpm',color:cssVar('--muted'),font:{size:10}}},
-        }}
+        options:{...chartDefaults(true),
+          plugins:{...chartDefaults(true).plugins,legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}},
+            tooltip:{...chartDefaults().plugins.tooltip,callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw} bpm`}}},
+          scales:{
+            x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),maxTicksLimit:6}},
+            y:{grid:{color:cv('--border')},ticks:{color:cv('--muted')},title:{display:true,text:'bpm',color:cv('--muted'),font:{size:10}}},
+          }}
       });
+      document.getElementById('rhr-zr').appendChild(zoomRow(ref));
     });
   }
 
-  // ── 3. HRV long-term ──────────────────────────────────────────────────────
-  if (hist.hrv && hist.hrv.length > 14) {
-    const hrs = hist.hrv;
-    const vals = hrs.map(h=>h.value);
-    const roll = rolling(vals, 7);
-    const first14 = vals.slice(0,14).filter(Boolean);
-    const last14  = vals.slice(-14).filter(Boolean);
-    const avgF = first14.reduce((a,b)=>a+b,0)/first14.length;
-    const avgL = last14.reduce((a,b)=>a+b,0)/last14.length;
-    const delta = avgL-avgF;
-    const cls = delta>3?'good':delta<-3?'bad':'neutral';
-    const c = el('div','card card--wide');
+  // ── HRV long-term ─────────────────────────────────────────────────
+  if(hist.hrv&&hist.hrv.length>14){
+    const hrs=hist.hrv;const vals=hrs.map(h=>h.value);const roll=rolling(vals,7);
+    const avgF=vals.slice(0,14).filter(Boolean).reduce((a,b)=>a+b,0)/Math.min(14,vals.filter(Boolean).length);
+    const avgL=vals.slice(-14).filter(Boolean).reduce((a,b)=>a+b,0)/Math.min(14,vals.filter(Boolean).length);
+    const delta=avgL-avgF;const cls=delta>3?'good':delta<-3?'bad':'neutral';
+    const ref={chart:null};
+    const c=el('div','card card--wide');
     c.innerHTML=`<div class="card-label">HRV long-term (90 days)</div>
       <div class="chart-wrap"><canvas id="chart-hrv-lt"></canvas></div>
-      <div class="insight ${cls}">${delta>=0?'+':''}${delta.toFixed(1)} ms vs 90 days ago. ${delta>3?'Improving autonomic fitness!':delta<-3?'Declining trend — check recovery habits.':'Stable autonomic balance.'}</div>`;
+      <div id="hrv-lt-zr"></div>
+      <div class="insight ${cls}">${delta>=0?'+':''}${delta.toFixed(1)} ms vs 90 days ago. ${delta>3?'Autonomic fitness improving!':delta<-3?'Declining trend — check sleep & recovery habits.':'Stable.'}</div>`;
+    c.appendChild(makeInfo('HRV: what to look for long-term',
+      `HRV is highly individual — <b>trend matters more than absolute value</b>.<br><br>
+       An upward trend alongside consistent training = your body is <b>adapting</b>. Downward trend despite normal training = <b>accumulated fatigue</b>, poor nutrition, or life stress.<br><br>
+       Always track <b>7-day rolling averages</b> — single-day HRV is noisy and misleading.`));
     add(c);
     requestAnimationFrame(()=>{
-      new Chart(document.getElementById('chart-hrv-lt'),{
+      ref.chart=new Chart(document.getElementById('chart-hrv-lt'),{
         type:'line',
         data:{labels:hrs.map(h=>h.date.slice(5)),datasets:[
-          {label:'HRV',data:vals,borderColor:cssVar('--accent')+'60',borderWidth:1,pointRadius:0,tension:0},
-          lineDataset('7-day avg',roll,cssVar('--accent'),{fill:true,pointRadius:0}),
+          {label:'HRV',data:vals,borderColor:cv('--accent')+'50',borderWidth:1,pointRadius:0,tension:0.1,fill:false},
+          lineDs('7-day avg',roll,cv('--accent'),{fill:true,pointRadius:0}),
         ]},
-        options:chartDefaults()
+        options:{...chartDefaults(true),
+          plugins:{...chartDefaults(true).plugins,legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}},
+            tooltip:{...chartDefaults().plugins.tooltip,callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw} ms`}}},
+        }
       });
+      document.getElementById('hrv-lt-zr').appendChild(zoomRow(ref));
     });
   }
 
-  // ── 4. Cumulative distance ────────────────────────────────────────────────
+  // ── Cumulative distance ───────────────────────────────────────────
   {
-    const runs = allActs.filter(a=>['running','treadmill_running'].includes(a.type)&&a.distance_m).sort((a,b)=>a.date.localeCompare(b.date));
-    if (runs.length > 5) {
-      let cumKm=0;
-      const cumData = runs.map(a=>{ cumKm+=(a.distance_m/1000); return {date:a.date.slice(5),km:Math.round(cumKm*10)/10}; });
-      const totalKm = Math.round(cumKm);
-      const c = el('div','card card--wide');
+    const runs=allActs.filter(a=>RUN_TYPES.has(a.type)&&a.distance_m).sort((a,b)=>a.date.localeCompare(b.date));
+    if(runs.length>5){
+      let cum=0;const cumData=runs.map(a=>{cum+=(a.distance_m/1000);return{date:a.date.slice(5),km:Math.round(cum*10)/10};});
+      const c=el('div','card card--wide');
       c.innerHTML=`<div class="card-label">Cumulative Running Distance</div>
-        <div style="font-size:32px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums">${fmt(totalKm)}<span style="font-size:14px;color:var(--muted);margin-left:4px">km in dataset</span></div>
+        <div style="font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums">${fmt(Math.round(cum))}<span style="font-size:13px;color:var(--muted);margin-left:4px">km total in dataset</span></div>
         <div class="chart-wrap"><canvas id="chart-cum"></canvas></div>`;
       add(c);
       requestAnimationFrame(()=>{
         new Chart(document.getElementById('chart-cum'),{
           type:'line',
-          data:{labels:cumData.map(e=>e.date),datasets:[
-            lineDataset('Cumulative km',cumData.map(e=>e.km),cssVar('--good'),{fill:true}),
-          ]},
-          options:chartDefaults()
+          data:{labels:cumData.map(e=>e.date),datasets:[lineDs('Cumulative km',cumData.map(e=>e.km),cv('--good'),{fill:true,pointRadius:0})]},
+          options:{...chartDefaults(),plugins:{...chartDefaults().plugins,tooltip:{...chartDefaults().plugins.tooltip,callbacks:{label:ctx=>`Total: ${ctx.raw?.toLocaleString('en')} km`}}}}
         });
       });
     }
   }
 
-  // ── 5. Monthly training summary ───────────────────────────────────────────
+  // ── Monthly summary ───────────────────────────────────────────────
   {
-    const monthMap = {};
-    allActs.forEach(a=>{
-      const mo = a.date.slice(0,7);
-      if (!monthMap[mo]) monthMap[mo]={runs:0,km:0,duration_h:0,acts:0};
-      monthMap[mo].acts++;
-      if (['running','treadmill_running'].includes(a.type)) { monthMap[mo].runs++; monthMap[mo].km+=(a.distance_m||0)/1000; }
-      monthMap[mo].duration_h+=(a.duration_s||0)/3600;
+    const mMap={};
+    allActs.forEach(a=>{const mo=a.date.slice(0,7);if(!mMap[mo])mMap[mo]={km:0,h:0};
+      if(RUN_TYPES.has(a.type))mMap[mo].km+=(a.distance_m||0)/1000;
+      mMap[mo].h+=(a.duration_s||0)/3600;
     });
-    const months = Object.keys(monthMap).sort().slice(-12);
-    if (months.length > 2) {
-      const c = el('div','card card--wide');
-      c.innerHTML=`<div class="card-label">Monthly Training Volume (12 months)</div>
+    const months=Object.keys(mMap).sort().slice(-12);
+    if(months.length>2){
+      const c=el('div','card card--wide');
+      c.innerHTML=`<div class="card-label">Monthly Training Summary (12 months)</div>
         <div class="chart-wrap-tall"><canvas id="chart-monthly"></canvas></div>`;
       add(c);
       requestAnimationFrame(()=>{
         new Chart(document.getElementById('chart-monthly'),{
           type:'bar',
           data:{labels:months,datasets:[
-            {label:'Running km',data:months.map(m=>Math.round(monthMap[m].km)),backgroundColor:cssVar('--accent')+'90'},
-            {label:'Active hours',data:months.map(m=>Math.round(monthMap[m].duration_h*10)/10),backgroundColor:cssVar('--blue')+'90',yAxisID:'y2'},
+            {label:'Running km',data:months.map(m=>Math.round(mMap[m].km)),backgroundColor:cv('--accent')+'90',yAxisID:'y'},
+            {label:'Total hours',data:months.map(m=>Math.round(mMap[m].h*10)/10),backgroundColor:cv('--blue')+'80',yAxisID:'y2'},
           ]},
-          options:{...chartDefaults(),plugins:{...chartDefaults().plugins,legend:{display:true,labels:{color:cssVar('--muted'),font:{size:10}}}},
-          scales:{
-            x:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted'),maxRotation:45}},
-            y:{grid:{color:cssVar('--border')},ticks:{color:cssVar('--muted')},title:{display:true,text:'km',color:cssVar('--muted'),font:{size:10}}},
-            y2:{position:'right',grid:{display:false},ticks:{color:cssVar('--blue')},title:{display:true,text:'hours',color:cssVar('--blue'),font:{size:10}}},
-          }}
+          options:{...chartDefaults(),
+            plugins:{...chartDefaults().plugins,legend:{display:true,position:'top',labels:{color:cv('--muted'),font:{size:10},boxWidth:8,boxHeight:8,padding:8}}},
+            scales:{
+              x:{grid:{color:cv('--border')},ticks:{color:cv('--muted'),maxRotation:45}},
+              y:{grid:{color:cv('--border')},ticks:{color:cv('--muted')},title:{display:true,text:'km',color:cv('--muted'),font:{size:10}}},
+              y2:{position:'right',grid:{display:false},ticks:{color:cv('--blue')},title:{display:true,text:'hours',color:cv('--blue'),font:{size:10}}},
+            }}
         });
       });
     }
@@ -1031,18 +1092,14 @@ function renderLongterm(d) {
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────────────────────────
-fetch('data/garmin.json?v=' + Date.now())
-  .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-  .then(d => {
-    document.getElementById('sync-time').textContent = d.updated ? `Updated ${d.updated}` : '';
-    renderToday(d);
-    renderAnalytics(d);
-    renderLongterm(d);
+fetch('data/garmin.json?v='+Date.now())
+  .then(r=>{if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.json();})
+  .then(d=>{
+    document.getElementById('sync-time').textContent=d.updated?`Updated ${d.updated}`:'';
+    renderToday(d);renderAnalytics(d);renderLongterm(d);
   })
-  .catch(err => {
-    ['today','analytics','longterm'].forEach(t=>{
-      document.getElementById('root-'+t).innerHTML=`<div class="state-msg">Could not load data.<br><small>${err.message}</small></div>`;
-    });
+  .catch(err=>{
+    ['today','analytics','longterm'].forEach(t=>{document.getElementById('root-'+t).innerHTML=`<div class="state-msg">Could not load data.<br><small>${err.message}</small></div>`;});
   });
 </script>
 </body>
