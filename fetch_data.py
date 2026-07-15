@@ -132,23 +132,53 @@ def main():
             "cycling": entry.get("cycling", {}).get("vo2MaxPreciseValue"),
         }
 
-    # ── Last activity ─────────────────────────────────────────────────────────
+    # ── Activities + GPS details ──────────────────────────────────────────────
     print("Activities…")
-    acts = safe(client.get_activities, 0, 5)
+    acts = safe(client.get_activities, 0, 10)
     if acts:
-        out["recent_activities"] = [
-            {
+        enriched = []
+        for a in acts:
+            act_id = a.get("activityId")
+            act_type = a.get("activityType", {}).get("typeKey", "")
+            entry = {
+                "id": act_id,
                 "date": str(a.get("startTimeLocal", ""))[:10],
+                "start_time": str(a.get("startTimeLocal", "")),
                 "name": a.get("activityName"),
-                "type": a.get("activityType", {}).get("typeKey"),
+                "type": act_type,
                 "duration_s": a.get("duration"),
                 "distance_m": a.get("distance"),
                 "avg_hr": a.get("averageHR"),
+                "max_hr": a.get("maxHR"),
                 "calories": a.get("calories"),
                 "training_load": a.get("activityTrainingLoad"),
+                "avg_speed": a.get("averageSpeed"),
+                "max_speed": a.get("maxSpeed"),
+                "elevation_gain": a.get("elevationGain"),
+                "avg_cadence": a.get("averageRunningCadenceInStepsPerMinute"),
+                "aerobic_effect": a.get("aerobicTrainingEffect"),
+                "anaerobic_effect": a.get("anaerobicTrainingEffect"),
+                "vo2max": a.get("vO2MaxValue"),
             }
-            for a in acts
-        ]
+
+            # Fetch GPS polyline for outdoor activities
+            if act_type in ("running", "cycling", "hiking", "walking", "open_water_swimming") and act_id:
+                print(f"  GPS for {act_id} ({act_type})…")
+                details = safe(client.get_activity_details, act_id)
+                if details:
+                    geo = details.get("geoPolylineDTO", {})
+                    polyline = geo.get("polyline", [])
+                    # Downsample to max 300 points to keep JSON small
+                    if len(polyline) > 300:
+                        step = len(polyline) // 300
+                        polyline = polyline[::step]
+                    entry["gps"] = [
+                        {"lat": p.get("lat"), "lon": p.get("lon")}
+                        for p in polyline if p.get("lat") and p.get("lon")
+                    ]
+
+            enriched.append(entry)
+        out["recent_activities"] = enriched
 
     # ── 30-day step history ───────────────────────────────────────────────────
     print("Step history…")

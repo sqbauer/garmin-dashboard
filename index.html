@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Garmin Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ── Tokens ─────────────────────────────────────────────────────────────── */
 :root {
@@ -336,6 +338,82 @@ canvas.sparkline { width: 100%; height: 48px; display: block; }
 .act-dist { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .act-hr { font-size: 11px; color: var(--muted); }
 
+/* ── Activity clickable ─────────────────────────────────────────────────── */
+.act-item { cursor: pointer; transition: background .15s; }
+.act-item:hover { background: var(--border); }
+
+/* ── Activity detail panel ──────────────────────────────────────────────── */
+.detail-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(4px);
+}
+.detail-overlay.open { display: block; }
+
+.detail-panel {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 201;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  max-height: 90dvh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.22,1,.36,1);
+}
+.detail-panel.open { transform: translateY(0); }
+
+@media (min-width: 600px) {
+  .detail-panel {
+    left: 50%; right: auto;
+    transform: translateX(-50%) translateY(100%);
+    width: 560px;
+    bottom: 0;
+    border-radius: 16px 16px 0 0;
+  }
+  .detail-panel.open { transform: translateX(-50%) translateY(0); }
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 0;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.detail-close {
+  margin-left: auto;
+  background: var(--surface-2);
+  border: none;
+  border-radius: 99px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 18px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.detail-close:hover { color: var(--text); }
+.detail-body { padding: 16px 20px 32px; display: flex; flex-direction: column; gap: 16px; }
+.detail-map { height: 220px; border-radius: var(--radius); overflow: hidden; background: var(--surface-2); }
+.detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.detail-stat {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+.detail-stat-key { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.detail-stat-val { font-size: 22px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.detail-stat-unit { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+
 /* ── Loading / error ────────────────────────────────────────────────────── */
 .state-msg {
   text-align: center;
@@ -383,6 +461,23 @@ canvas.sparkline { width: 100%; height: 48px; display: block; }
   </div>
 
   <div id="root"><div class="state-msg">Loading data…</div></div>
+</div>
+
+<!-- Activity detail panel -->
+<div class="detail-overlay" id="detail-overlay"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <div id="detail-icon" style="font-size:24px"></div>
+    <div>
+      <div id="detail-name" style="font-size:15px;font-weight:700"></div>
+      <div id="detail-date" style="font-size:11px;color:var(--muted)"></div>
+    </div>
+    <button class="detail-close" id="detail-close">✕</button>
+  </div>
+  <div class="detail-body">
+    <div class="detail-map" id="detail-map" style="display:none"></div>
+    <div class="detail-stats" id="detail-stats"></div>
+  </div>
 </div>
 
 <script>
@@ -759,7 +854,7 @@ function render(d) {
     const header = el('div', 'card-label', 'Recent Activities');
     const list = el('div', 'act-list');
 
-    d.recent_activities.slice(0, 5).forEach(a => {
+    d.recent_activities.slice(0, 10).forEach(a => {
       const dur_s = a.duration_s || 0;
       const h = Math.floor(dur_s / 3600);
       const m = Math.floor((dur_s % 3600) / 60);
@@ -777,6 +872,7 @@ function render(d) {
           <div class="act-dist">${distKm}</div>
           <div class="act-hr">${a.avg_hr ? a.avg_hr + ' bpm' : a.calories ? a.calories + ' kcal' : ''}</div>
         </div>`;
+      item.addEventListener('click', () => openDetail(a));
       list.appendChild(item);
     });
 
@@ -785,6 +881,100 @@ function render(d) {
     add(card);
   }
 }
+
+// ── Activity detail panel ─────────────────────────────────────────────────────
+let leafletMap = null;
+
+function durStr(s) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60);
+  return h > 0 ? `${h}h ${m.toString().padStart(2,'0')}m` : `${m}m ${sec.toString().padStart(2,'0')}s`;
+}
+
+function paceStr(speed_ms) {
+  if (!speed_ms) return null;
+  const secPerKm = 1000 / speed_ms;
+  const m = Math.floor(secPerKm / 60), s = Math.floor(secPerKm % 60);
+  return `${m}:${s.toString().padStart(2,'0')} /km`;
+}
+
+function openDetail(a) {
+  document.getElementById('detail-icon').textContent = actIcon(a.type);
+  document.getElementById('detail-name').textContent = a.name || a.type || 'Activity';
+  document.getElementById('detail-date').textContent = a.start_time ? a.start_time.replace('T', ' ').slice(0, 16) : a.date || '';
+
+  // Build stat tiles
+  const stats = document.getElementById('detail-stats');
+  stats.innerHTML = '';
+
+  const tile = (key, val, unit) => {
+    if (val == null) return '';
+    return `<div class="detail-stat">
+      <div class="detail-stat-key">${key}</div>
+      <div class="detail-stat-val">${val}<span class="detail-stat-unit">${unit || ''}</span></div>
+    </div>`;
+  };
+
+  const dur_s = a.duration_s || 0;
+  const distKm = a.distance_m ? (a.distance_m / 1000).toFixed(2) : null;
+  const pace = a.avg_speed ? paceStr(a.avg_speed) : null;
+  const isRun = ['running', 'treadmill_running'].includes(a.type);
+
+  stats.innerHTML = [
+    tile('Duration',       durStr(dur_s),          ''),
+    distKm ? tile('Distance', distKm,              'km') : '',
+    isRun && pace ? tile('Avg pace', pace,          '') : '',
+    tile('Avg HR',         a.avg_hr,               'bpm'),
+    tile('Max HR',         a.max_hr,               'bpm'),
+    tile('Calories',       a.calories,             'kcal'),
+    tile('Elev gain',      a.elevation_gain != null ? Math.round(a.elevation_gain) : null, 'm'),
+    a.avg_cadence ? tile('Cadence', Math.round(a.avg_cadence), 'spm') : '',
+    a.aerobic_effect ? tile('Aerobic TE', a.aerobic_effect.toFixed(1), '') : '',
+    a.training_load ? tile('Training load', Math.round(a.training_load), '') : '',
+  ].join('');
+
+  // Map
+  const mapDiv = document.getElementById('detail-map');
+  if (a.gps && a.gps.length > 1) {
+    mapDiv.style.display = 'block';
+    // destroy previous map instance
+    if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+    mapDiv.innerHTML = '';
+
+    setTimeout(() => {
+      leafletMap = L.map('detail-map', { zoomControl: true, attributionControl: false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+      }).addTo(leafletMap);
+
+      const latlngs = a.gps.map(p => [p.lat, p.lon]);
+      const line = L.polyline(latlngs, {
+        color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+        weight: 3,
+        opacity: 0.9,
+      }).addTo(leafletMap);
+
+      // start/end markers
+      L.circleMarker(latlngs[0], { radius: 6, color: '#3fd68f', fillColor: '#3fd68f', fillOpacity: 1 }).addTo(leafletMap);
+      L.circleMarker(latlngs[latlngs.length - 1], { radius: 6, color: '#f06060', fillColor: '#f06060', fillOpacity: 1 }).addTo(leafletMap);
+
+      leafletMap.fitBounds(line.getBounds(), { padding: [16, 16] });
+    }, 50);
+  } else {
+    mapDiv.style.display = 'none';
+    if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  }
+
+  document.getElementById('detail-overlay').classList.add('open');
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+document.getElementById('detail-close').addEventListener('click', closeDetail);
+document.getElementById('detail-overlay').addEventListener('click', closeDetail);
 
 // ── Fetch data ────────────────────────────────────────────────────────────────
 fetch('data/garmin.json?v=' + Date.now())
