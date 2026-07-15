@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Garmin Dashboard</title>
+<style>
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #0c0e17;
+  --surface:     #13161f;
+  --surface-2:   #1c2033;
+  --border:      #252840;
+  --text:        #dde0f2;
+  --muted:       #5c6080;
+  --accent:      #7b6ef6;
+  --accent-dim:  rgba(123, 110, 246, 0.12);
+  --good:        #3fd68f;
+  --warn:        #f0a832;
+  --bad:         #f06060;
+  --good-dim:    rgba(63, 214, 143, 0.12);
+  --warn-dim:    rgba(240, 168, 50, 0.12);
+  --bad-dim:     rgba(240, 96, 96, 0.12);
+  --radius:      12px;
+  --radius-sm:   8px;
+  --gap:         14px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:          #f0f1f8;
+    --surface:     #ffffff;
+    --surface-2:   #e8eaf5;
+    --border:      #d4d7ec;
+    --text:        #1a1c2e;
+    --muted:       #8890b8;
+    --accent:      #6254e8;
+    --accent-dim:  rgba(98, 84, 232, 0.10);
+    --good:        #1db870;
+    --warn:        #d48a10;
+    --bad:         #d64040;
+    --good-dim:    rgba(29, 184, 112, 0.10);
+    --warn-dim:    rgba(212, 138, 16, 0.10);
+    --bad-dim:     rgba(214, 64, 64, 0.10);
+  }
+}
+
+:root[data-theme="light"] {
+  --bg:          #f0f1f8;
+  --surface:     #ffffff;
+  --surface-2:   #e8eaf5;
+  --border:      #d4d7ec;
+  --text:        #1a1c2e;
+  --muted:       #8890b8;
+  --accent:      #6254e8;
+  --accent-dim:  rgba(98, 84, 232, 0.10);
+  --good:        #1db870;
+  --warn:        #d48a10;
+  --bad:         #d64040;
+  --good-dim:    rgba(29, 184, 112, 0.10);
+  --warn-dim:    rgba(212, 138, 16, 0.10);
+  --bad-dim:     rgba(214, 64, 64, 0.10);
+}
+
+:root[data-theme="dark"] {
+  --bg:          #0c0e17;
+  --surface:     #13161f;
+  --surface-2:   #1c2033;
+  --border:      #252840;
+  --text:        #dde0f2;
+  --muted:       #5c6080;
+  --accent:      #7b6ef6;
+  --accent-dim:  rgba(123, 110, 246, 0.12);
+  --good:        #3fd68f;
+  --warn:        #f0a832;
+  --bad:         #f06060;
+  --good-dim:    rgba(63, 214, 143, 0.12);
+  --warn-dim:    rgba(240, 168, 50, 0.12);
+  --bad-dim:     rgba(240, 96, 96, 0.12);
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.5;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.shell {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  gap: 12px;
+}
+
+.header-left { display: flex; flex-direction: column; gap: 2px; }
+
+.site-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.sync-time {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.theme-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px 10px;
+  line-height: 1;
+  transition: color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.theme-btn:hover { color: var(--text); border-color: var(--muted); }
+.theme-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+  margin-top: var(--gap);
+}
+
+@media (min-width: 520px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .card--wide { grid-column: 1 / -1; }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* ── Big metric ─────────────────────────────────────────────────────────── */
+.metric-big {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.metric-unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 3px;
+}
+.metric-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ── Stat row (small key/value pairs) ───────────────────────────────────── */
+.stat-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stat-key {
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.stat-val {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ── Progress bar ───────────────────────────────────────────────────────── */
+.progress-wrap { display: flex; flex-direction: column; gap: 6px; }
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+.progress-track {
+  height: 5px;
+  background: var(--surface-2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 0.6s cubic-bezier(.22,1,.36,1);
+}
+.progress-fill.good { background: var(--good); }
+.progress-fill.warn { background: var(--warn); }
+
+/* ── Score chip ─────────────────────────────────────────────────────────── */
+.score-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.score-chip.good  { background: var(--good-dim);  color: var(--good); }
+.score-chip.warn  { background: var(--warn-dim);  color: var(--warn); }
+.score-chip.bad   { background: var(--bad-dim);   color: var(--bad);  }
+.score-chip.neutral { background: var(--accent-dim); color: var(--accent); }
+
+/* ── Sleep stages mini-bar ──────────────────────────────────────────────── */
+.sleep-stages {
+  display: flex;
+  height: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  gap: 1px;
+}
+.stage { height: 100%; border-radius: 2px; }
+.stage-deep  { background: #7b6ef6; }
+.stage-rem   { background: #a78cf7; }
+.stage-light { background: #60a5fa; }
+.stage-awake { background: var(--surface-2); }
+
+.stage-legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Sparkline canvas ───────────────────────────────────────────────────── */
+.spark-wrap { width: 100%; }
+canvas.sparkline { width: 100%; height: 48px; display: block; }
+
+/* ── Activity list ──────────────────────────────────────────────────────── */
+.act-list { display: flex; flex-direction: column; gap: 10px; }
+.act-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+.act-icon {
+  font-size: 20px;
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.act-info { flex: 1; min-width: 0; }
+.act-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.act-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.act-stats { text-align: right; flex-shrink: 0; }
+.act-dist { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.act-hr { font-size: 11px; color: var(--muted); }
+
+/* ── Loading / error ────────────────────────────────────────────────────── */
+.state-msg {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ── Divider ────────────────────────────────────────────────────────────── */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header class="site-header">
+    <div class="header-left">
+      <div class="site-title">Garmin Dashboard</div>
+      <div class="sync-time" id="sync-time">Loading…</div>
+    </div>
+    <button class="theme-btn" id="theme-btn" aria-label="Toggle theme">☀︎</button>
+  </header>
+
+  <div id="root"><div class="state-msg">Loading data…</div></div>
+</div>
+
+<script>
+// ── Theme toggle ─────────────────────────────────────────────────────────────
+const html = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+const saved = localStorage.getItem('theme') ||
+  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+html.setAttribute('data-theme', saved);
+themeBtn.textContent = saved === 'dark' ? '☀︎' : '☾';
+
+themeBtn.addEventListener('click', () => {
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  themeBtn.textContent = next === 'dark' ? '☀︎' : '☾';
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const el = (tag, cls, inner) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (inner !== undefined) e.innerHTML = inner;
+  return e;
+};
+
+const scoreClass = v => {
+  if (v === null || v === undefined) return 'neutral';
+  if (v >= 80) return 'good';
+  if (v >= 50) return 'warn';
+  return 'bad';
+};
+
+const fmt = (v, decimals = 0) =>
+  v === null || v === undefined ? '—' :
+  Number(v).toLocaleString('en', { maximumFractionDigits: decimals });
+
+const actIcon = type => ({
+  running: '🏃', cycling: '🚴', swimming: '🏊', walking: '🚶',
+  hiking: '🥾', strength_training: '🏋️', yoga: '🧘',
+  indoor_cycling: '🚴', treadmill_running: '🏃',
+}[type] || '⚡');
+
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+function drawSparkline(canvas, values, color) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth * dpr;
+  const H = canvas.offsetHeight * dpr;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+
+  const valid = values.filter(v => v != null);
+  if (!valid.length) return;
+  const min = Math.min(...valid) * 0.95;
+  const max = Math.max(...valid) * 1.05;
+  const range = max - min || 1;
+
+  const pts = values.map((v, i) => ({
+    x: (i / (values.length - 1)) * w,
+    y: h - ((( v ?? min) - min) / range) * (h - 8) - 4,
+  }));
+
+  // area fill
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, h);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, h);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, color + '50');
+  grad.addColorStop(1, color + '00');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // line
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // last point dot
+  const last = pts[pts.length - 1];
+  ctx.beginPath();
+  ctx.arc(last.x, last.y, 3, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(d) {
+  const root = document.getElementById('root');
+  root.innerHTML = '';
+
+  // sync time
+  document.getElementById('sync-time').textContent =
+    d.updated ? `Updated ${d.updated}` : 'No sync time';
+
+  const grid = el('div', 'grid');
+  root.appendChild(grid);
+
+  const add = card => grid.appendChild(card);
+
+  // ── Steps card ──────────────────────────────────────────────────────────
+  if (d.daily) {
+    const { steps, step_goal, calories_active, distance_m, floors } = d.daily;
+    const pct = step_goal ? Math.min(steps / step_goal, 1) : 0;
+    const distKm = distance_m ? (distance_m / 1000).toFixed(1) : null;
+    const fillClass = pct >= 1 ? 'good' : pct >= 0.7 ? 'warn' : '';
+
+    const card = el('div', 'card');
+    card.innerHTML = `
+      <div class="card-label">Today</div>
+      <div>
+        <div class="metric-big">${fmt(steps)}<span class="metric-unit">steps</span></div>
+        <div class="metric-sub">${distKm ? distKm + ' km' : ''}${distKm && floors ? ' · ' : ''}${floors ? floors + ' floors' : ''}</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Goal</span><span>${fmt(step_goal)}</span></div>
+        <div class="progress-track">
+          <div class="progress-fill ${fillClass}" style="width:${(pct*100).toFixed(1)}%"></div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-item">
+          <span class="stat-key">Active cal</span>
+          <span class="stat-val">${fmt(calories_active)} kcal</span>
+        </div>
+      </div>`;
+    add(card);
+  }
+
+  // ── Body battery & stress ────────────────────────────────────────────────
+  if (d.daily) {
+    const { body_battery_high, body_battery_low, stress_avg,
+            intensity_moderate, intensity_vigorous } = d.daily;
+    const bbScore = body_battery_high;
+
+    const card = el('div', 'card');
+    card.innerHTML = `
+      <div class="card-label">Energy & Stress</div>
+      <div>
+        <div class="metric-big">${fmt(bbScore)}<span class="metric-unit">/ 100</span></div>
+        <div class="metric-sub">Body battery peak · low ${fmt(body_battery_low)}</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-item">
+          <span class="stat-key">Avg stress</span>
+          <span class="stat-val">${fmt(stress_avg)} / 100</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-key">Moderate intensity</span>
+          <span class="stat-val">${fmt(intensity_moderate)} min</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-key">Vigorous intensity</span>
+          <span class="stat-val">${fmt(intensity_vigorous)} min</span>
+        </div>
+      </div>`;
+    add(card);
+  }
+
+  // ── Sleep card ───────────────────────────────────────────────────────────
+  if (d.sleep) {
+    const s = d.sleep;
+    const total_s = s.total_s || 0;
+    const deep_s = s.deep_s_raw || 0;
+
+    // reconstruct seconds from formatted strings if needed
+    const hm = str => {
+      if (!str) return 0;
+      const m = str.match(/(\d+)h\s*(\d+)m/);
+      return m ? parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 : 0;
+    };
+    const ts = hm(s.total);
+    const ds = hm(s.deep);
+    const ls = hm(s.light);
+    const rs = hm(s.rem);
+    const as = hm(s.awake);
+
+    const pDeep  = ts ? ds / ts : 0;
+    const pRem   = ts ? rs / ts : 0;
+    const pLight = ts ? ls / ts : 0;
+    const pAwake = ts ? as / ts : 0;
+
+    const scoreC = scoreClass(s.score);
+    const card = el('div', 'card');
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="card-label">Sleep · ${s.date || ''}</div>
+        ${s.score != null ? `<div class="score-chip ${scoreC}">${s.score}</div>` : ''}
+      </div>
+      <div>
+        <div class="metric-big">${s.total || '—'}</div>
+        <div class="metric-sub">
+          ${s.avg_spo2 ? 'SpO₂ ' + fmt(s.avg_spo2, 0) + '% · ' : ''}
+          ${s.avg_respiration ? fmt(s.avg_respiration, 1) + ' brpm' : ''}
+        </div>
+      </div>
+      <div>
+        <div class="sleep-stages">
+          <div class="stage stage-deep"  style="flex:${pDeep}"></div>
+          <div class="stage stage-rem"   style="flex:${pRem}"></div>
+          <div class="stage stage-light" style="flex:${pLight}"></div>
+          <div class="stage stage-awake" style="flex:${Math.max(pAwake, 0.01)}"></div>
+        </div>
+        <div class="stage-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#7b6ef6"></span>Deep ${s.deep || '—'}</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#a78cf7"></span>REM ${s.rem || '—'}</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Light ${s.light || '—'}</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--surface-2)"></span>Awake ${s.awake || '—'}</span>
+        </div>
+      </div>`;
+    add(card);
+  }
+
+  // ── HRV & HR ─────────────────────────────────────────────────────────────
+  {
+    const hrv = d.hrv || d.sleep || {};
+    const hr = d.heart_rate || {};
+    const hrvVal = hrv.last_night || hrv.hrv_last_night;
+    const hrvAvg = hrv.weekly_avg || hrv.hrv_5day;
+    const status = (hrv.status || hrv.hrv_status || '').toLowerCase();
+    const chipClass = status.includes('balanced') || status.includes('good') ? 'good'
+      : status.includes('low') || status.includes('unbal') ? 'warn' : 'neutral';
+
+    if (hrvVal || hr.resting) {
+      const card = el('div', 'card');
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div class="card-label">Heart Rate & HRV</div>
+          ${status ? `<div class="score-chip ${chipClass}">${status}</div>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div class="card-title">Resting HR</div>
+            <div class="metric-big" style="font-size:28px">${fmt(hr.resting)}<span class="metric-unit">bpm</span></div>
+          </div>
+          <div>
+            <div class="card-title">HRV</div>
+            <div class="metric-big" style="font-size:28px">${fmt(hrvVal)}<span class="metric-unit">ms</span></div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-item">
+            <span class="stat-key">7-day avg HRV</span>
+            <span class="stat-val">${fmt(hrvAvg)} ms</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-key">Max HR today</span>
+            <span class="stat-val">${fmt(hr.max)} bpm</span>
+          </div>
+        </div>`;
+      add(card);
+    }
+  }
+
+  // ── Training readiness & VO2max ──────────────────────────────────────────
+  if (d.readiness || d.vo2max) {
+    const r = d.readiness || {};
+    const v = d.vo2max || {};
+    const chipClass = scoreClass(r.score);
+
+    const card = el('div', 'card');
+    card.innerHTML = `
+      <div class="card-label">Fitness</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        ${r.score != null ? `
+        <div>
+          <div class="card-title">Readiness</div>
+          <div class="metric-big" style="font-size:28px">${fmt(r.score)}<span class="metric-unit">/ 100</span></div>
+        </div>` : ''}
+        ${v.running != null ? `
+        <div>
+          <div class="card-title">VO₂ max</div>
+          <div class="metric-big" style="font-size:28px">${fmt(v.running, 1)}<span class="metric-unit">ml/kg</span></div>
+        </div>` : ''}
+      </div>
+      ${r.recovery_time_h != null ? `
+      <div class="stat-row">
+        <div class="stat-item">
+          <span class="stat-key">Recovery time</span>
+          <span class="stat-val">${fmt(r.recovery_time_h)} h</span>
+        </div>
+      </div>` : ''}`;
+    add(card);
+  }
+
+  // ── Step history sparkline ────────────────────────────────────────────────
+  if (d.steps_history && d.steps_history.length > 1) {
+    const vals = d.steps_history.slice(-30).map(e => e.steps);
+    const goal = d.steps_history[0]?.goal || 10000;
+    const card = el('div', 'card card--wide');
+    card.innerHTML = `
+      <div class="card-label">Steps — last 30 days</div>
+      <div class="spark-wrap">
+        <canvas class="sparkline" id="spark-steps"></canvas>
+      </div>
+      <div class="stat-row">
+        <div class="stat-item">
+          <span class="stat-key">7-day avg</span>
+          <span class="stat-val">${fmt(vals.slice(-7).reduce((a,b)=>(a||0)+(b||0),0)/vals.slice(-7).filter(Boolean).length)} steps</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-key">Best day</span>
+          <span class="stat-val">${fmt(Math.max(...vals.filter(Boolean)))} steps</span>
+        </div>
+      </div>`;
+    add(card);
+
+    // draw after appending to DOM so offsetWidth is correct
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('spark-steps');
+      if (canvas) drawSparkline(canvas, vals,
+        getComputedStyle(html).getPropertyValue('--accent').trim());
+    });
+  }
+
+  // ── Recent activities ────────────────────────────────────────────────────
+  if (d.recent_activities && d.recent_activities.length) {
+    const card = el('div', 'card card--wide');
+    const header = el('div', 'card-label', 'Recent Activities');
+    const list = el('div', 'act-list');
+
+    d.recent_activities.slice(0, 5).forEach(a => {
+      const dur_s = a.duration_s || 0;
+      const h = Math.floor(dur_s / 3600);
+      const m = Math.floor((dur_s % 3600) / 60);
+      const durStr = h > 0 ? `${h}h ${m.toString().padStart(2,'0')}m` : `${m}m`;
+      const distKm = a.distance_m ? (a.distance_m / 1000).toFixed(1) + ' km' : '';
+
+      const item = el('div', 'act-item');
+      item.innerHTML = `
+        <div class="act-icon">${actIcon(a.type)}</div>
+        <div class="act-info">
+          <div class="act-name">${a.name || a.type || 'Activity'}</div>
+          <div class="act-meta">${a.date || ''} · ${durStr}</div>
+        </div>
+        <div class="act-stats">
+          <div class="act-dist">${distKm}</div>
+          <div class="act-hr">${a.avg_hr ? a.avg_hr + ' bpm' : a.calories ? a.calories + ' kcal' : ''}</div>
+        </div>`;
+      list.appendChild(item);
+    });
+
+    card.appendChild(header);
+    card.appendChild(list);
+    add(card);
+  }
+}
+
+// ── Fetch data ────────────────────────────────────────────────────────────────
+fetch('data/garmin.json')
+  .then(r => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  })
+  .then(render)
+  .catch(err => {
+    document.getElementById('root').innerHTML =
+      `<div class="state-msg">Could not load data.<br><small>${err.message}</small></div>`;
+    document.getElementById('sync-time').textContent = 'No data';
+  });
+</script>
+</body>
+</html>
