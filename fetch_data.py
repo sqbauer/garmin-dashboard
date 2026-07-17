@@ -323,9 +323,9 @@ def main():
                     "rem_s":   dto.get("remSleepSeconds"),
                 })
 
-        hr_d = safe(client.get_resting_heart_rate, d)
-        if hr_d and isinstance(hr_d, dict):
-            val = hr_d.get("restingHeartRateValue") or hr_d.get("value")
+        stats_d = safe(client.get_stats, d)
+        if stats_d and isinstance(stats_d, dict):
+            val = stats_d.get("restingHeartRate")
             if val:
                 hist_resting_hr.append({"date": d, "value": val})
 
