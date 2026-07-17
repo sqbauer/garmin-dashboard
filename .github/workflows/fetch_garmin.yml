@@ -1,12 +1,12 @@
-name: Fetch Garmin Data
+name: Fetch Garmin Data & Build
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # every day at 07:00 UTC
-  workflow_dispatch:        # allow manual trigger from GitHub UI
+    - cron: '0 7 * * *'
+  workflow_dispatch:
 
 jobs:
-  fetch:
+  fetch-and-build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -18,7 +18,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python dependencies
         run: pip install garminconnect
 
       - name: Fetch Garmin data
@@ -27,10 +31,21 @@ jobs:
           GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
         run: python fetch_data.py
 
-      - name: Commit updated data
+      - name: Copy data for Vite public dir
+        run: |
+          mkdir -p public/data
+          cp data/garmin.json public/data/garmin.json
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Commit updated data and built app
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/garmin.json
-          git diff --cached --quiet || git commit -m "data: update $(date -u '+%Y-%m-%d')"
+          git add data/garmin.json public/data/garmin.json docs/
+          git diff --cached --quiet || git commit -m "data+build: update $(date -u '+%Y-%m-%d %H:%M') UTC"
           git push

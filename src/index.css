@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-size: 14px; }
+  * { box-sizing: border-box; }
+  body { min-height: 100dvh; overflow-x: hidden; }
+
+  /* Recessive scrollbars */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #243654; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3e5068; }
+}
+
+@layer utilities {
+  .tabular { font-variant-numeric: tabular-nums; }
+  .no-select { user-select: none; }
+}
+
+/* Recharts global overrides — keep chart text inside the ink scale */
+.recharts-text { fill: #7a90a5 !important; font-size: 10px !important; }
+.recharts-cartesian-axis-line { stroke: #1c2432 !important; }
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line { stroke: #1c2432 !important; }
+.recharts-tooltip-wrapper { z-index: 50; }
