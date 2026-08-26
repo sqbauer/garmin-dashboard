@@ -1,6 +1,6 @@
 {
-  "updated": "2026-08-25 07:40 UTC",
-  "today": "2026-08-25",
+  "updated": "2026-08-26 07:42 UTC",
+  "today": "2026-08-26",
   "name": "Staf Bauer",
   "daily": {
     "steps": null,
@@ -16,7 +16,7 @@
     "intensity_vigorous": null
   },
   "sleep": {
-    "date": "2026-08-24",
+    "date": "2026-08-25",
     "total": null,
     "total_s": null,
     "deep": null,
@@ -12805,11 +12805,6 @@
   ],
   "steps_history": [
     {
-      "date": "2025-08-25",
-      "steps": 7970,
-      "goal": 11000
-    },
-    {
       "date": "2025-08-26",
       "steps": 15101,
       "goal": 11000
@@ -22354,13 +22349,6 @@
     "hrv": [],
     "sleep": [
       {
-        "date": "2026-05-28",
-        "score": null,
-        "total_s": 27840,
-        "deep_s": 2160,
-        "rem_s": 9420
-      },
-      {
         "date": "2026-05-29",
         "score": null,
         "total_s": 28860,
@@ -22957,10 +22945,6 @@
       }
     ],
     "resting_hr": [
-      {
-        "date": "2026-05-28",
-        "value": 60
-      },
       {
         "date": "2026-05-29",
         "value": 59
