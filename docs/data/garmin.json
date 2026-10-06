@@ -1,43 +1,43 @@
 {
-  "updated": "2026-10-05 15:30 UTC",
-  "today": "2026-10-05",
+  "updated": "2026-10-06 13:53 UTC",
+  "today": "2026-10-06",
   "name": "Staf Bauer",
   "daily": {
-    "steps": 2274,
+    "steps": 800,
     "step_goal": 11000,
-    "calories_total": 1670.0,
-    "calories_active": 123.0,
-    "distance_m": 1914,
+    "calories_total": 1272.0,
+    "calories_active": 105.0,
+    "distance_m": 673,
     "floors": null,
-    "stress_avg": 21,
-    "body_battery_high": 88,
-    "body_battery_low": 40,
+    "stress_avg": 17,
+    "body_battery_high": 100,
+    "body_battery_low": 50,
     "intensity_moderate": 0,
     "intensity_vigorous": 0
   },
   "sleep": {
-    "date": "2026-10-04",
-    "total": "8h 52m",
-    "total_s": 31920,
-    "deep": "1h 04m",
-    "deep_s": 3840,
-    "light": "5h 44m",
-    "light_s": 20640,
-    "rem": "2h 04m",
-    "rem_s": 7440,
-    "awake": "0h 04m",
-    "awake_s": 240,
+    "date": "2026-10-05",
+    "total": "10h 16m",
+    "total_s": 36960,
+    "deep": "0h 02m",
+    "deep_s": 120,
+    "light": "6h 36m",
+    "light_s": 23760,
+    "rem": "3h 38m",
+    "rem_s": 13080,
+    "awake": "0h 03m",
+    "awake_s": 180,
     "score": null,
-    "avg_spo2": 94.0,
+    "avg_spo2": 93.0,
     "avg_respiration": 13.0,
     "hrv_last_night": null,
     "hrv_5day": null,
     "hrv_status": null
   },
   "heart_rate": {
-    "resting": 53,
-    "max": 100,
-    "min": 50
+    "resting": 51,
+    "max": 120,
+    "min": 51
   },
   "recent_activities": [
     {
@@ -15609,11 +15609,6 @@
   ],
   "steps_history": [
     {
-      "date": "2025-10-05",
-      "steps": 13256,
-      "goal": 11000
-    },
-    {
       "date": "2025-10-06",
       "steps": 8937,
       "goal": 11000
@@ -17430,7 +17425,12 @@
     },
     {
       "date": "2026-10-05",
-      "steps": 2274,
+      "steps": 4186,
+      "goal": 11000
+    },
+    {
+      "date": "2026-10-06",
+      "steps": 800,
       "goal": 11000
     }
   ],
@@ -26202,13 +26202,6 @@
     "hrv": [],
     "sleep": [
       {
-        "date": "2026-07-08",
-        "score": null,
-        "total_s": 23220,
-        "deep_s": 5160,
-        "rem_s": 4440
-      },
-      {
         "date": "2026-07-09",
         "score": null,
         "total_s": 24480,
@@ -26800,15 +26793,18 @@
         "date": "2026-10-05",
         "score": null,
         "total_s": 36960,
-        "deep_s": 240,
+        "deep_s": 120,
         "rem_s": 13080
+      },
+      {
+        "date": "2026-10-06",
+        "score": null,
+        "total_s": 30120,
+        "deep_s": 2700,
+        "rem_s": 8820
       }
     ],
     "resting_hr": [
-      {
-        "date": "2026-07-08",
-        "value": 59
-      },
       {
         "date": "2026-07-09",
         "value": 57
@@ -27160,6 +27156,10 @@
       {
         "date": "2026-10-05",
         "value": 53
+      },
+      {
+        "date": "2026-10-06",
+        "value": 51
       }
     ]
   }
