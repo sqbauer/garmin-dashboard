@@ -1,43 +1,43 @@
 {
-  "updated": "2026-10-30 13:47 UTC",
-  "today": "2026-10-30",
+  "updated": "2026-10-31 13:15 UTC",
+  "today": "2026-10-31",
   "name": "Staf Bauer",
   "daily": {
-    "steps": 2778,
+    "steps": 6464,
     "step_goal": 11000,
-    "calories_total": 1439.0,
-    "calories_active": 206.0,
-    "distance_m": 2338,
+    "calories_total": 2407.0,
+    "calories_active": 1068.0,
+    "distance_m": 5562,
     "floors": null,
-    "stress_avg": 27,
-    "body_battery_high": 64,
-    "body_battery_low": 24,
-    "intensity_moderate": 0,
-    "intensity_vigorous": 0
+    "stress_avg": 57,
+    "body_battery_high": 8,
+    "body_battery_low": 5,
+    "intensity_moderate": 48,
+    "intensity_vigorous": 8
   },
   "sleep": {
-    "date": "2026-10-29",
-    "total": "7h 50m",
-    "total_s": 28200,
-    "deep": "0h 35m",
-    "deep_s": 2100,
-    "light": "5h 48m",
-    "light_s": 20880,
-    "rem": "1h 27m",
-    "rem_s": 5220,
-    "awake": null,
-    "awake_s": 0,
+    "date": "2026-10-30",
+    "total": "9h 04m",
+    "total_s": 32640,
+    "deep": "0h 32m",
+    "deep_s": 1920,
+    "light": "6h 14m",
+    "light_s": 22440,
+    "rem": "2h 17m",
+    "rem_s": 8220,
+    "awake": "0h 04m",
+    "awake_s": 240,
     "score": null,
-    "avg_spo2": 94.0,
+    "avg_spo2": 92.0,
     "avg_respiration": 12.0,
     "hrv_last_night": null,
     "hrv_5day": null,
     "hrv_status": null
   },
   "heart_rate": {
-    "resting": 54,
-    "max": 114,
-    "min": 53
+    "resting": 58,
+    "max": 134,
+    "min": 67
   },
   "recent_activities": [
     {
@@ -11059,11 +11059,6 @@
   ],
   "steps_history": [
     {
-      "date": "2025-10-30",
-      "steps": 6048,
-      "goal": 11000
-    },
-    {
       "date": "2025-10-31",
       "steps": 4826,
       "goal": 11000
@@ -12880,7 +12875,12 @@
     },
     {
       "date": "2026-10-30",
-      "steps": 2778,
+      "steps": 5593,
+      "goal": 11000
+    },
+    {
+      "date": "2026-10-31",
+      "steps": 6464,
       "goal": 11000
     }
   ],
@@ -21928,13 +21928,6 @@
     "hrv": [],
     "sleep": [
       {
-        "date": "2026-08-02",
-        "score": null,
-        "total_s": 13860,
-        "deep_s": 2280,
-        "rem_s": 1020
-      },
-      {
         "date": "2026-08-03",
         "score": null,
         "total_s": 34620,
@@ -22526,15 +22519,18 @@
         "date": "2026-10-30",
         "score": null,
         "total_s": 32640,
-        "deep_s": 1980,
-        "rem_s": 7980
+        "deep_s": 1920,
+        "rem_s": 8220
+      },
+      {
+        "date": "2026-10-31",
+        "score": null,
+        "total_s": 22140,
+        "deep_s": 1260,
+        "rem_s": 7440
       }
     ],
     "resting_hr": [
-      {
-        "date": "2026-08-02",
-        "value": 55
-      },
       {
         "date": "2026-08-03",
         "value": 48
@@ -22886,6 +22882,10 @@
       {
         "date": "2026-10-30",
         "value": 54
+      },
+      {
+        "date": "2026-10-31",
+        "value": 58
       }
     ]
   }
