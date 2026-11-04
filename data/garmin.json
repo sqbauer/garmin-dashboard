@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-03 14:49 UTC",
-  "today": "2026-11-03",
+  "updated": "2026-11-04 15:01 UTC",
+  "today": "2026-11-04",
   "name": "Staf Bauer",
   "daily": {
     "steps": null,
@@ -16,20 +16,20 @@
     "intensity_vigorous": null
   },
   "sleep": {
-    "date": "2026-11-02",
-    "total": "9h 36m",
-    "total_s": 34560,
-    "deep": "0h 05m",
-    "deep_s": 300,
-    "light": "6h 52m",
-    "light_s": 24720,
-    "rem": "2h 39m",
-    "rem_s": 9540,
-    "awake": "0h 13m",
-    "awake_s": 780,
+    "date": "2026-11-03",
+    "total": null,
+    "total_s": null,
+    "deep": null,
+    "deep_s": null,
+    "light": null,
+    "light_s": null,
+    "rem": null,
+    "rem_s": null,
+    "awake": null,
+    "awake_s": null,
     "score": null,
-    "avg_spo2": 93.0,
-    "avg_respiration": 12.0,
+    "avg_spo2": null,
+    "avg_respiration": null,
     "hrv_last_night": null,
     "hrv_5day": null,
     "hrv_status": null
@@ -10820,11 +10820,6 @@
     }
   ],
   "steps_history": [
-    {
-      "date": "2025-11-03",
-      "steps": 12955,
-      "goal": 11000
-    },
     {
       "date": "2025-11-04",
       "steps": 7504,
@@ -21889,13 +21884,6 @@
     "hrv": [],
     "sleep": [
       {
-        "date": "2026-08-06",
-        "score": null,
-        "total_s": 27120,
-        "deep_s": 6480,
-        "rem_s": 6300
-      },
-      {
         "date": "2026-08-07",
         "score": null,
         "total_s": 28800,
@@ -22485,10 +22473,6 @@
       }
     ],
     "resting_hr": [
-      {
-        "date": "2026-08-06",
-        "value": 53
-      },
       {
         "date": "2026-08-07",
         "value": 51
